@@ -3,6 +3,7 @@ import time
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from optparse import OptionGroup, OptionParser
 
 pickleFolder = 'pickled-objects/'
 outputFolder = 'output/'
@@ -126,16 +127,26 @@ def PrepareData (productCode):
 
   return (merged, labels)
 
-def main ():
-  ReadAllPickledObjects ()
-
+def CreateProductHistograms ():
   productCodes = productHierarchy.product_module_code
   productCodes = productCodes.unique ().tolist ()
 
   for pc in productCodes:
     if pc >= 0:
       print ('Processing Product Code %d' % pc)
-      GetHouseholdProductFrequencyByCode (int (pc))
+      GetHouseholdProductFrequencyByCode (int (pc), True)
+
+def main ():
+  parser = OptionParser ()
+
+  parser.add_option ('--create-histograms', action='store_true', dest='create_histograms', default=False)
+  
+  (options, args) = parser.parse_args ()
+
+  ReadAllPickledObjects ()
+
+  if options.create_histograms == True:
+    CreateProductHistograms ()
 
 if __name__ == "__main__":
   main ()
