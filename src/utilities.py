@@ -1,10 +1,27 @@
 
+import time
 import pandas as pd
 import cPickle as pickle
 
+global dataFolder, outputFolder, pickleFolder, brandFrequencyFolder
 dataFolder = 'data/'
+outputFolder = 'output/'
 pickleFolder = 'pickled-objects/'
+brandFrequencyFolder = outputFolder + 'product-frequency-by-household/'
 
+def TimeItDecorator (function):
+  """Basic decorator that times the runtime of some arbitrary function.
+  """
+  def Wrapper (*args):
+    begin = time.time ()
+    ret = function (*args)
+    end = time.time ()
+    print ('%s took %0.3f ms' % (function.func_name, (end - begin) * 1000.0))
+    return ret
+
+  return Wrapper
+
+@TimeItDecorator
 def DatasetToPickle ():
   """Converts our dataset to pickle format. This makes it easier
      to read in the future
@@ -29,8 +46,27 @@ def DatasetToPickle ():
   productHierarchy.to_pickle (pickleFolder + 'product-hierarchy.pkl')
   dmaToFips.to_pickle (pickleFolder + 'dma-to-fips.pkl')
 
-def main ():
-  DatasetToPickle ()
+@TimeItDecorator
+def ReadAllPickledObjects ():
+  """Reads our previously pickleized dataset
+  """
+  global brandVariations, products, purchases, trips, panelist, \
+         productsExtra, retailers, productHierarchy, dmaToFips
 
-if __name__ == "__main__":
-  main ()
+  brandVariations = ReadPickledObject ('brand-variations.pkl')
+  products = ReadPickledObject ('products.pkl')
+  purchases = ReadPickledObject ('purchases.pkl')
+  trips = ReadPickledObject ('trips.pkl')
+  panelist = ReadPickledObject ('panelist.pkl')
+  productsExtra = ReadPickledObject ('products-extra.pkl')
+  retailers = ReadPickledObject ('retailers.pkl')
+  productHierarchy = ReadPickledObject ('product-hierarchy.pkl')
+  dmaToFips = ReadPickledObject ('dma-to-fips.pkl')
+
+def ReadPickledObject (filename):
+  """Read a single pickled object from a filename
+
+  Keyword Arguments:
+  filename - the name of the file where our pickled object is stored
+  """
+  return pd.read_pickle (pickleFolder + filename)
