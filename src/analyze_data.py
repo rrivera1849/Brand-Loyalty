@@ -11,6 +11,9 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import cross_val_score
+from sklearn.ensemble import AdaBoostClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.datasets import make_gaussian_quantiles
 
 pickleFolder = 'pickled-objects/'
 outputFolder = 'output/'
@@ -139,14 +142,22 @@ def CreateAllProductHistograms ():
       print ('Processing Product Code %d' % pc)
       GetHouseholdProductFrequencyByCode (int (pc), True)
 
-def ModelWrapper (productCode, cutOff):
-  (X, Y) = PrepareData (productCode)
+def ModelWrapper (productCode, cutOff, scale=True):
+  if ',' in productCode:
+    productCode = productCode.split (',')
+    (X, Y) = pd.DataFrame ()
+  else:
+    (X, Y) = PrepareData (int (productCode))
 
-  # Scale data
-  scaler = StandardScaler ()
-  X = pd.DataFrame (scaler.fit_transform (X))
+  for i in range (0, len (productCode)):
+    (xNew, yNew) = PrepareData (int (productCode[i]))
+    X = pd.concat ([X, xNew])
+    Y = pd.concat ([Y, yNew])
 
-  # Cutoff our ratio
+  if scale == True:
+    scaler = StandardScaler ()
+    X = pd.DataFrame (scaler.fit_transform (X))
+
   Y['ratio'] = np.where (Y.ratio > cutOff, 1, 0)
 
   return (X, Y)
@@ -169,6 +180,15 @@ def FitSVM (productCode, cutOff, kernel='rbf'):
 
   return scores
 
+def FitAdaBoost (productCode, cutOff):
+  print ('Runnning AdaBoost')
+  (X, Y) = ModelWrapper (productCode, cutOff)
+
+  bdt = AdaBoostClassifier (n_estimators=200)
+  scores = cross_val_score (bdt, X, Y.ratio.ravel (), cv=10)
+
+  return scores
+
 def FitSVMGrid (productCode, cutOff):
   print ('Running SVM Grid...')
   (X, Y) = ModelWrapper (productCode, cutOff)
@@ -188,11 +208,12 @@ def main ():
 
   parser.add_option ('--create-histograms', action='store_true', dest='create_histograms', default=False)
   parser.add_option ('--create-single-histogram', action='store_true', dest='create_single_histogram', default=False)
-  parser.add_option ('-p', '--product-code', dest='product_code', type=int)
+  parser.add_option ('-p', '--product-code', dest='product_code', type=string)
   parser.add_option ('-c', '--cut-off', dest='cutoff', type=float)
   parser.add_option ('--run-svm', action='store_true', dest='run_svm', default=False)
   parser.add_option ('--run-svm-grid', action='store_true', dest='run_svm_grid', default=False)
   parser.add_option ('--run-logistic', action='store_true', dest='run_logistic', default=False)
+  parser.add_option ('--run-ada-boost', action='store_true', dest='run_ada_boost', default=False)
   
   (options, args) = parser.parse_args ()
 
@@ -201,7 +222,7 @@ def main ():
   if options.create_histograms == True:
     CreateAllProductHistograms ()
 
-  runModel = options.run_svm | options.run_logistic | options.run_svm_grid
+  runModel = options.run_svm | options.run_logistic | options.run_svm_grid | options.run_ada_boost
 
   if runModel or options.create_single_histogram:
     if not options.product_code:
@@ -224,6 +245,10 @@ def main ():
     if options.run_logistic == True:
       scores = FitLogisticRegression (options.product_code, options.cutoff)
       print ("The mean accuracy of logistic regression is %0.2f" % scores.mean ())
+
+    if options.run_ada_boost == True:
+      scores = FitAdaBoost (options.product_code, options.cutoff)
+      print ("The mean accuracy of ada boost is %0.2f" % scores.mean ())
 
 if __name__ == "__main__":
   main ()
