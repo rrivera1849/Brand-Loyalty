@@ -9,6 +9,7 @@ output/*
 !output/.empty
 pickled-objects/*
 !pickled-objects/.empty
+.DS_Store
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

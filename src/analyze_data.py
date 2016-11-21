@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
-from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import cross_val_score
@@ -62,15 +61,9 @@ def GetUPCFrequency ():
   valueCounts = purchases.upc.value_counts ()
   valueCounts.to_csv (outputFolder + 'purchases-upc-frequency.csv', sep='\t')
 
-def GetHouseholdProductFrequencyByName (productName):
-  productSearch = products[products['product_module_descr'].str.contains(productName.upper ()) == True]
-  return GetHouseholdProductFrequencyInternal (productSearch, saveFiles)
-
 def GetHouseholdProductFrequencyByCode (productCode, saveFiles=False):
   productSearch = products[products['product_module_code'] == productCode]
-  return GetHouseholdProductFrequencyInternal (productSearch, saveFiles)
 
-def GetHouseholdProductFrequencyInternal (productSearch, saveFiles=False):
   merged = pd.merge (productSearch, purchases, on=None, left_on=None, right_on='upc', left_index=True, right_index=False)
   merged['trip_code_uc'] = merged.index.tolist ()
   merged['is_brand'] = np.where (merged.brand_descr.str.contains ('CTL') == True, False, True)
@@ -86,14 +79,17 @@ def GetHouseholdProductFrequencyInternal (productSearch, saveFiles=False):
   if saveFiles:
     if len (merged.ratio) > 0:
       merged.to_pickle (brandFrequencyFolder + str (productCode))
-      
-      fig = plt.figure ()
-      plt.title (str (productCode) + ' - Ratio of Brand Purchases vs Non-Brand Purchases')
-      plt.xlabel ('Ratio')
-      plt.ylabel ('Frequency')
-      merged.ratio.plot.hist ()
-      plt.savefig (brandFrequencyFolder + str (productCode) + '.png')
-      plt.close (fig)
+
+    fig = plt.figure ()
+
+    productName = productHierarchy[productHierarchy['product_module_code'] == productCode].product_module_descr.tolist ()[0]
+    plt.title (str (productName) + ' - Ratio of Brand Purchases')
+    plt.xlabel ('Ratio')
+    plt.ylabel ('Frequency')
+    merged.ratio.plot.hist ()
+
+    plt.savefig (brandFrequencyFolder + str (productCode) + '.png')
+    plt.close (fig)
 
   return merged
 
@@ -134,7 +130,7 @@ def PrepareData (productCode):
 
   return (merged, labels)
 
-def CreateProductHistograms ():
+def CreateAllProductHistograms ():
   productCodes = productHierarchy.product_module_code
   productCodes = productCodes.unique ().tolist ()
 
@@ -156,22 +152,31 @@ def ModelWrapper (productCode, cutOff):
   return (X, Y)
 
 def FitLogisticRegression (productCode, cutOff):
+  print ('Running Logistic Regression')
   (X, Y) = ModelWrapper (productCode, cutOff)
 
   logreg = LogisticRegression ()
-  scores = cross_val_score (logreg, X, Y.ratio.ravel (), cv=5)
+  scores = cross_val_score (logreg, X, Y.ratio.ravel (), cv=10)
+
+  return scores
+
+def FitSVM (productCode, cutOff, kernel='rbf'):
+  print ('Runnning SVM')
+  (X, Y) = ModelWrapper (productCode, cutOff)
+
+  clf = SVC (kernel=kernel)
+  scores = cross_val_score (clf, X, Y.ratio.ravel (), cv=10)
 
   return scores
 
 def FitSVMGrid (productCode, cutOff):
+  print ('Running SVM Grid...')
   (X, Y) = ModelWrapper (productCode, cutOff)
 
   C_range = np.logspace(-3, 3, 5)
   gamma_range = np.logspace(-3, 3, 5)
   param_grid = dict(gamma=gamma_range, C=C_range)
 
-  # Train SVM
-  print ('Training SVM...')
   cv = StratifiedShuffleSplit(n_splits=5, test_size=0.2, random_state=43)
   grid = GridSearchCV(SVC(), param_grid=param_grid, cv=cv)
   grid.fit (X, Y.ratio.ravel ())
@@ -182,9 +187,11 @@ def main ():
   parser = OptionParser ()
 
   parser.add_option ('--create-histograms', action='store_true', dest='create_histograms', default=False)
+  parser.add_option ('--create-single-histogram', action='store_true', dest='create_single_histogram', default=False)
   parser.add_option ('-p', '--product-code', dest='product_code', type=int)
   parser.add_option ('-c', '--cut-off', dest='cutoff', type=float)
   parser.add_option ('--run-svm', action='store_true', dest='run_svm', default=False)
+  parser.add_option ('--run-svm-grid', action='store_true', dest='run_svm_grid', default=False)
   parser.add_option ('--run-logistic', action='store_true', dest='run_logistic', default=False)
   
   (options, args) = parser.parse_args ()
@@ -192,18 +199,25 @@ def main ():
   ReadAllPickledObjects ()
 
   if options.create_histograms == True:
-    CreateProductHistograms ()
+    CreateAllProductHistograms ()
 
-  runModel = options.run_svm | options.run_logistic
+  runModel = options.run_svm | options.run_logistic | options.run_svm_grid
 
-  if runModel:
+  if runModel or options.create_single_histogram:
     if not options.product_code:
-      parser.error ('Must provide a product code in order to run a model')
+      parser.error ('Must provide a product code for any single product operations')
 
-    if not options.cutoff:
-      parser.error ('Must provide a cutoff for the y values in order to run a model')
+    if not options.cutoff and runModel:
+      parser.error ('Must provide a cutoff for any single product operations')
+
+    if options.create_single_histogram:
+      GetHouseholdProductFrequencyByCode (options.product_code, True)
 
     if options.run_svm == True:
+      scores = FitSVM (options.product_code, options.cutoff)
+      print ("The mean accuracy of svm is %0.2f" % scores.mean ())
+
+    if options.run_svm_grid == True:
       svmGrid = FitSVMGrid (options.product_code, options.cutoff)
       print("The best parameters are %s with a score of %0.2f" % (svmGrid.best_params_, svmGrid.best_score_))
 
