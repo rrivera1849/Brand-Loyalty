@@ -79,7 +79,8 @@ def PrepareDataInternal (productCode):
   # Merge with the panelist file and drop all the data we don't want to use
   merged = pd.merge (householdProductFrequency, utilities.panelist, on=None, left_on='household_code', right_on=None, left_index=False, right_index=True)
   merged = merged.drop \
-        (['panel_year', 'projection_factor', 'projection_factor_magnet', 'household_composition', \
+        ([ \
+          'panel_year', 'projection_factor', 'projection_factor_magnet', 'household_composition', \
           'male_head_birth', 'female_head_birth', 'marital_status', 'panelist_zip_code', 'fips_state_code', 'fips_state_descr', \
           'fips_county_code', 'fips_county_descr', 'region_code', 'scantrack_market_code', 'scantrack_market_descr', 'dma_code', 'dma_descr', \
           'kitchen_appliances', 'tv_items', 'household_internet_connection', 'wic_indicator_ever_notcurrent', \
@@ -95,11 +96,14 @@ def PrepareDataInternal (productCode):
           ], 1)
 
   # Convert the following categorical varaibles to booleans
-  merged['age_and_presence_of_children'] = np.where (merged.age_and_presence_of_children == 9, 0, 1)
+  # merged['age_and_presence_of_children'] = np.where (merged.age_and_presence_of_children == 9, 0, 1)
+  merged[merged['age_and_presence_of_children'] == 9] = 0
   merged['male_head_employment'] = np.where (merged.male_head_employment.isin ([1, 2, 3]), 1, 0)
   merged['female_head_employment'] = np.where (merged.female_head_employment.isin ([1, 2, 3]), 1, 0)
-  merged['hispanic_origin'] = np.where (merged.hispanic_origin == 1, 1, 0)
-  merged['wic_indicator_current'] = np.where (merged.wic_indicator_current == 1, 1, 0)
+  merged[merged['male_head_employment'] == 9] = 0
+  merged[merged['female_head_employment'] == 9] = 0
+  # merged['hispanic_origin'] = np.where (merged.hispanic_origin == 1, 1, 0)
+  # merged['wic_indicator_current'] = np.where (merged.wic_indicator_current == 1, 1, 0)
 
   # Seperate out race into boolean variables
   merged['race_white'] = np.where (merged.race == 1, 1, 0)

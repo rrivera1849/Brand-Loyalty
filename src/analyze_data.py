@@ -39,7 +39,7 @@ def FitModels (models, productCode, cutOff, kFold=10, doPlot=True):
   results = []
 
   for name, model in models:
-    scores = cross_val_score (model, X, Y.ratio.ravel (), cv=kFold)
+    scores = cross_val_score (model, X, Y.ratio.ravel (), cv=kFold, scoring='accuracy')
     results.append (scores)
     names.append (name)
     msg = "%s: %f (%f)" % (name, scores.mean(), scores.std())
