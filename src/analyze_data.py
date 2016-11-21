@@ -1,9 +1,17 @@
 
 import time 
+from optparse import OptionGroup, OptionParser
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from optparse import OptionGroup, OptionParser
+from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import StratifiedShuffleSplit
+from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import cross_val_score
 
 pickleFolder = 'pickled-objects/'
 outputFolder = 'output/'
@@ -89,7 +97,6 @@ def GetHouseholdProductFrequencyInternal (productSearch, saveFiles=False):
 
   return merged
 
-
 def PrepareData (productCode):
   householdProductFrequency = GetHouseholdProductFrequencyByCode (productCode)
 
@@ -136,10 +143,49 @@ def CreateProductHistograms ():
       print ('Processing Product Code %d' % pc)
       GetHouseholdProductFrequencyByCode (int (pc), True)
 
+def ModelWrapper (productCode, cutOff):
+  (X, Y) = PrepareData (productCode)
+
+  # Scale data
+  scaler = StandardScaler ()
+  X = pd.DataFrame (scaler.fit_transform (X))
+
+  # Cutoff our ratio
+  Y['ratio'] = np.where (Y.ratio > cutOff, 1, 0)
+
+  return (X, Y)
+
+def FitLogisticRegression (productCode, cutOff):
+  (X, Y) = ModelWrapper (productCode, cutOff)
+
+  logreg = LogisticRegression ()
+  scores = cross_val_score (logreg, X, Y.ratio.ravel (), cv=5)
+
+  return scores
+
+def FitSVMGrid (productCode, cutOff):
+  (X, Y) = ModelWrapper (productCode, cutOff)
+
+  C_range = np.logspace(-3, 3, 5)
+  gamma_range = np.logspace(-3, 3, 5)
+  param_grid = dict(gamma=gamma_range, C=C_range)
+
+  # Train SVM
+  print ('Training SVM...')
+  cv = StratifiedShuffleSplit(n_splits=5, test_size=0.2, random_state=43)
+  grid = GridSearchCV(SVC(), param_grid=param_grid, cv=cv)
+  grid.fit (X, Y.ratio.ravel ())
+
+  return grid
+
 def main ():
   parser = OptionParser ()
 
   parser.add_option ('--create-histograms', action='store_true', dest='create_histograms', default=False)
+  parser.add_option ('-p', '--product-code', dest='product_code', type=int)
+  parser.add_option ('-c', '--cut-off', dest='cutoff', type=float)
+  parser.add_option ('--run-svm', action='store_true', dest='run_svm', default=False)
+  parser.add_option ('--run-logistic', action='store_true', dest='run_logistic', default=False)
   
   (options, args) = parser.parse_args ()
 
@@ -147,6 +193,23 @@ def main ():
 
   if options.create_histograms == True:
     CreateProductHistograms ()
+
+  runModel = options.run_svm | options.run_logistic
+
+  if runModel:
+    if not options.product_code:
+      parser.error ('Must provide a product code in order to run a model')
+
+    if not options.cutoff:
+      parser.error ('Must provide a cutoff for the y values in order to run a model')
+
+    if options.run_svm == True:
+      svmGrid = FitSVMGrid (options.product_code, options.cutoff)
+      print("The best parameters are %s with a score of %0.2f" % (svmGrid.best_params_, svmGrid.best_score_))
+
+    if options.run_logistic == True:
+      scores = FitLogisticRegression (options.product_code, options.cutoff)
+      print ("The mean accuracy of logistic regression is %0.2f" % scores.mean ())
 
 if __name__ == "__main__":
   main ()
