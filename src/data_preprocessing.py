@@ -145,6 +145,6 @@ def PrepareData (productCode, cutOff, scale=True):
     scaler = StandardScaler ()
     X = pd.DataFrame (scaler.fit_transform (X))
 
-  Y['ratio'] = np.where (Y.ratio > cutOff, 1, 0)
+  Y['ratio'] = np.where (Y.ratio >= cutOff, 1, 0)
 
   return (X, Y)
