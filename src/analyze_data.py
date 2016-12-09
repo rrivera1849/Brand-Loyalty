@@ -59,7 +59,7 @@ def main ():
 
   generalGroup = OptionGroup (parser, "General Options", "These options may be requirements for any other options.") 
   generalGroup.add_option ('-p', '--product-code', dest='product_code', type='string')
-  generalGroup.add_option ('-c', '--cut-off', dest='cutoff', type=float)
+  generalGroup.add_option ('-c', '--cut-off', dest='cutoff', type=float, default=0.5)
 
   modelGroup = OptionGroup (parser, "Model Options", "These options control what models to run on the dataset.")
   modelGroup.add_option ('--run-svm', action='store_true', dest='run_svm', default=False)
