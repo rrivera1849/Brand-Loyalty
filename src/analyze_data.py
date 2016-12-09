@@ -6,6 +6,7 @@ from optparse import OptionGroup, OptionParser
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+
 from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import AdaBoostClassifier
@@ -62,7 +63,6 @@ def main ():
 
   modelGroup = OptionGroup (parser, "Model Options", "These options control what models to run on the dataset.")
   modelGroup.add_option ('--run-svm', action='store_true', dest='run_svm', default=False)
-  modelGroup.add_option ('--run-svm-grid', action='store_true', dest='run_svm_grid', default=False)
   modelGroup.add_option ('--run-logistic', action='store_true', dest='run_logistic', default=False)
   modelGroup.add_option ('--run-ada-boost', action='store_true', dest='run_ada_boost', default=False)
 
