@@ -129,7 +129,7 @@ def PrepareData (productCode, cutOff, scale=True):
   """
   if ',' in productCode:
     productCode = productCode.split (',')
-    (X, Y) = pd.DataFrame ()
+    X = Y = pd.DataFrame ()
   else:
     (X, Y) = PrepareDataInternal (int (productCode))
 

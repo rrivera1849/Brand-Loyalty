@@ -51,7 +51,7 @@ def FitModels (models, productCode, cutOff, kFold=10, doPlot=True):
     plt.boxplot (results)
     x = fig.add_subplot (111)
     x.set_xticklabels (names)
-    plt.show ()
+    plt.savefig (utilities.outputFolder + str (productCode) + ' Algorithm Comparison')
 
 def main ():
   parser = OptionParser ()
