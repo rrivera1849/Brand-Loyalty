@@ -7,6 +7,48 @@ import cPickle as pickle
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 
+def GetProductFeatures (description, isProductGroup):
+  if isProductGroup:
+    search = utilities.productHierarchy[utilities.productHierarchy['product_group_descr'] == description]
+  else:
+    search = utilities.productHierarchy[utilities.productHierarchy['department_descr'] == description]
+
+  # UPC is the index of the products matrix, we make it a column so we don't
+  # lose it in the merge
+  toMerge = utilities.products
+  toMerge['upc'] = utilities.products.index
+
+  merged = pd.merge (search, toMerge, \
+                     on='product_module_code', left_on=None, right_on=None, \
+                     left_index=False, right_index=False)
+
+  merged = pd.merge (merged, utilities.purchases, on='upc', left_on=None, right_on=None, \
+                     left_index=False, right_index=False)
+  
+  merged['is_brand'] = np.where (merged.brand_descr.str.contains ('CTL') == True, False, True)
+  merged['is_not_brand'] = (merged['is_brand'] - 1) * -1
+  merged['brand_price'] = merged['total_price_paid'] * merged['is_brand']
+  merged['non_brand_price'] = merged['total_price_paid'] * merged['is_not_brand']
+  merged['quantity_brand'] = merged['quantity'] * merged['is_brand']
+  merged['quantity_non_brand'] = merged['quantity'] * merged['is_not_brand']
+
+  merged = \
+      merged.groupby (['product_module_code'])['total_price_paid', 'quantity', 'is_brand', 'is_not_brand', \
+                                               'quantity_brand', 'quantity_non_brand', 'brand_price', 'non_brand_price'].sum ().reset_index ()
+
+  merged['brand_ratio'] = merged['is_brand'] / (merged['is_brand'] + merged['is_not_brand'])
+  merged['unit_price'] = merged['total_price_paid'] / merged['quantity']
+  merged['brand_price_ratio'] = (merged['brand_price'] / merged['quantity_brand']) / (merged['non_brand_price'] / merged['quantity_non_brand'])
+
+  merged = merged[['brand_ratio', 'unit_price', 'brand_price_ratio', 'quantity', 'product_module_code']]
+  merged = merged.dropna ()
+  merged = merged[merged['quantity'] >= 1000]
+
+  X = merged[['brand_ratio', 'unit_price', 'brand_price_ratio']]
+  Y = merged['product_module_code']
+
+  return (X, Y)
+
 def GetHouseholdProductFrequencyByCode (productCode, saveFiles=False):
   """This method returns a table specifying how many brand vs non-brand
      purchases each household had against a specifict product code.

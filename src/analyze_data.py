@@ -6,12 +6,14 @@ from optparse import OptionGroup, OptionParser
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.model_selection import cross_val_score
 from sklearn.feature_selection import RFECV
+from sklearn.cluster import KMeans
 
 def CreateAllProductHistograms ():
   """Creates every product ratio histogram.
@@ -23,6 +25,31 @@ def CreateAllProductHistograms ():
     if pc >= 0:
       print ('Processing Product Code %d' % pc)
       data_preprocessing.GetHouseholdProductFrequencyByCode (int (pc), True)
+
+def Cluster (description, numClusters=3, isProductGroup=False):
+  (X, Y) = data_preprocessing.GetProductFeatures (description, isProductGroup)
+
+  kMeans = KMeans (n_clusters=numClusters)
+  kMeans.fit (X)
+  labels = kMeans.labels_
+  
+  figure =  plt.figure (1, figsize=(4, 3))
+
+  ax = Axes3D(figure, rect=[0, 0, .95, 1], elev=48, azim=134)
+  ax.scatter(X.iloc[:, 2], X.iloc[:, 0], X.iloc[:, 1], c=labels.astype(np.float))
+
+  ax.w_xaxis.set_ticklabels([])
+  ax.w_yaxis.set_ticklabels([])
+  ax.w_zaxis.set_ticklabels([])
+  ax.set_xlabel('Brand Price Ratio')
+  ax.set_ylabel('Brand vs Non-Brand Ratio')
+  ax.set_zlabel('Unit Price')
+
+  plt.savefig (utilities.outputFolder + description + '-' + str (numClusters) + '-cluster')
+  plt.show ()
+  plt.close (figure)
+
+  print 'Clusters saved to output folder.'
 
 def FitModels (models, productCode, cutOff, kFold, featureEvaluation, doPlot):
   """Fit an arbitrary number of models to the data and evaluate their
@@ -132,6 +159,17 @@ def main ():
 
   utilityGroup.add_option ('--create-single-histogram', action='store_true', \
                            dest='create_single_histogram', default=False)
+
+  utilityGroup.add_option ('--cluster', action='store_true', \
+                           dest='cluster', default=False)
+
+  utilityGroup.add_option ('--num-clusters', dest='num_clusters', type=int, default=3)
+
+  utilityGroup.add_option ('--department-description', type='string', \
+                           dest='department_description')
+
+  utilityGroup.add_option ('--product-group-description', type='string', \
+                           dest='product_group_description')
   #=========================Utility Group End=========================#
 
   parser.add_option_group (generalGroup)
@@ -142,8 +180,16 @@ def main ():
 
   utilities.ReadAllPickledObjects ()
 
-  if options.create_histograms == True:
+  if options.create_histograms:
     CreateAllProductHistograms ()
+
+  if options.cluster:
+    if options.product_group_description:
+      Cluster (options.product_group_description, options.num_clusters, True)
+    elif options.department_description:
+      Cluster (options.department_description, options.num_clusters, False)
+    else:
+      parser.error ("Must pass in department description or product group description in order to cluster by department")
 
   runModel = options.run_svm | options.run_logistic | options.run_ada_boost
 
