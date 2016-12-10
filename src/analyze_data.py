@@ -38,6 +38,7 @@ def FitModels (models, productCode, cutOff, kFold, featureEvaluation, doPlot):
   doPlot - whether we do the boxplot or not
   """
   (X, Y) = data_preprocessing.PrepareData (productCode, cutOff)
+  columnNames = X.columns.values.tolist ()
 
   names = []
   results = []
@@ -53,10 +54,16 @@ def FitModels (models, productCode, cutOff, kFold, featureEvaluation, doPlot):
 
       print "Optimal Number of Features:"
       print rfecv.n_features_
-      print "Feature Mask:"
-      print rfecv.support_
+
       print "Feature Ranking:"
-      print rfecv.ranking_
+      featureRanking = []
+      for f in range (0, len (rfecv.ranking_)):
+        featureRanking.append ( (columnNames[f], rfecv.ranking_[f]) )
+
+      featureRanking.sort (key=lambda x: x[1])
+
+      for f in range (0, len (featureRanking)):
+        print "\t%d - %s\n" % (featureRanking[f][1], featureRanking[f][0])
 
       if doPlot:
         fig = plt.figure ()

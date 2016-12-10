@@ -141,10 +141,17 @@ def PrepareData (productCode, cutOff, scale=True):
     X = pd.concat ([X, xNew])
     Y = pd.concat ([Y, yNew])
 
+  # Preserve column names before applying scaling
+  columnNames = X.columns.values.tolist ()
+
   if scale == True:
     scaler = StandardScaler ()
+    # This operation will not keep the column names
     X = pd.DataFrame (scaler.fit_transform (X))
 
+  X.columns = columnNames
+
+  # Seperate our ratio into two "bins"
   Y['ratio'] = np.where (Y.ratio >= cutOff, 1, 0)
 
   return (X, Y)
