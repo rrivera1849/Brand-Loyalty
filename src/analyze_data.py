@@ -62,8 +62,12 @@ def FitModels (models, productCode, cutOff, kFold, featureEvaluation, doPlot):
 
       featureRanking.sort (key=lambda x: x[1])
 
+      featureRankingFile = open (utilities.outputFolder + str (productCode) + "-" + \
+                                 name + "-" + "feature-ranking", "w+")
       for f in range (0, len (featureRanking)):
         print "\t%d - %s\n" % (featureRanking[f][1], featureRanking[f][0])
+        print >> featureRankingFile, "\t%d - %s\n" % (featureRanking[f][1], featureRanking[f][0])
+      featureRankingFile.close ();
 
       if doPlot:
         fig = plt.figure ()
