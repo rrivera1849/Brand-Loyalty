@@ -52,7 +52,7 @@ def FitModels (models, productCode, cutOff, kFold, featureEvaluation, doPlot):
       scores = rfecv.grid_scores_
 
       print "Optimal Number of Features:"
-      rfecv.n_features_
+      print rfecv.n_features_
       print "Feature Mask:"
       print rfecv.support_
       print "Feature Ranking:"
