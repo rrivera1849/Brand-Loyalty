@@ -96,10 +96,7 @@ def PrepareDataInternal (productCode):
           ], 1)
 
   # Convert the following categorical varaibles to booleans
-  # merged['age_and_presence_of_children'] = np.where (merged.age_and_presence_of_children == 9, 0, 1)
   merged[merged['age_and_presence_of_children'] == 9] = 0
-  # merged['male_head_employment'] = np.where (merged.male_head_employment.isin ([1, 2, 3]), 1, 0)
-  # merged['female_head_employment'] = np.where (merged.female_head_employment.isin ([1, 2, 3]), 1, 0)
   merged[merged['male_head_employment'] == 9] = 0
   merged[merged['female_head_employment'] == 9] = 0
   merged['hispanic_origin'] = np.where (merged.hispanic_origin == 1, 1, 0)
