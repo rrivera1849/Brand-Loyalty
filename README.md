@@ -5,8 +5,8 @@ We seek to classify households as ‘brand loyal’ or not, and then use machine
 to their loyalty or lack thereof. 
 
 # TODO List
-~~- Feature Ablation~~
-~~- Significant Coefficient Viewer~~
+- ~~Feature Ablation~~
+- ~~Significant Coefficient Viewer~~
 - More cutoff bins 
   - How do we determine the amount of bins automatically? Variance?
 - Come up with representative features of products
