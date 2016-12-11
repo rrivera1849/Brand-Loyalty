@@ -26,30 +26,50 @@ def CreateAllProductHistograms ():
       print ('Processing Product Code %d' % pc)
       data_preprocessing.GetHouseholdProductFrequencyByCode (int (pc), True)
 
-def Cluster (description, numClusters=3, isProductGroup=False):
+def Cluster (description, numClusters, isProductGroup, doPlot):
+  """Given a department description, or a product group description. This 
+     function cluster's similar groups together and returns a dictionary of 
+     ProductModuleCode -> cluster
+
+  Keyword Arguments:
+  description - a string representing either a department description or a group description
+  numClusters - total number of clusters to use for KMeans
+  isProductgroup - true if description string is a product group description, false if it's department
+  doPlot - if true, we do a 3D plot of our clusters and save them to a file
+  """
   (X, Y) = data_preprocessing.GetProductFeatures (description, isProductGroup)
 
   kMeans = KMeans (n_clusters=numClusters)
   kMeans.fit (X)
   labels = kMeans.labels_
   
-  figure =  plt.figure (1, figsize=(4, 3))
+  if doPlot:
+    figure =  plt.figure (1, figsize=(4, 3))
+    
+    ax = Axes3D(figure, rect=[0, 0, .95, 1], elev=48, azim=134)
+    ax.scatter(X.iloc[:, 2], X.iloc[:, 0], X.iloc[:, 1], c=labels.astype(np.float))
 
-  ax = Axes3D(figure, rect=[0, 0, .95, 1], elev=48, azim=134)
-  ax.scatter(X.iloc[:, 2], X.iloc[:, 0], X.iloc[:, 1], c=labels.astype(np.float))
+    ax.w_xaxis.set_ticklabels([])
+    ax.w_yaxis.set_ticklabels([])
+    ax.w_zaxis.set_ticklabels([])
+    ax.set_xlabel('Brand Price Ratio')
+    ax.set_ylabel('Brand vs Non-Brand Ratio')
+    ax.set_zlabel('Unit Price')
 
-  ax.w_xaxis.set_ticklabels([])
-  ax.w_yaxis.set_ticklabels([])
-  ax.w_zaxis.set_ticklabels([])
-  ax.set_xlabel('Brand Price Ratio')
-  ax.set_ylabel('Brand vs Non-Brand Ratio')
-  ax.set_zlabel('Unit Price')
+    plt.show ()
+    plt.savefig (utilities.outputFolder + description + '-' + str (numClusters) + '-cluster')
+    print 'Clusters saved to output folder.'
+    plt.close (figure)
 
-  plt.savefig (utilities.outputFolder + description + '-' + str (numClusters) + '-cluster')
-  plt.show ()
-  plt.close (figure)
+  
+  productToClustersFile = open (utilities.outputFolder + description + "-" + \
+                                str (numClusters), "w+")
 
-  print 'Clusters saved to output folder.'
+  productCodesToClusters = dict (zip (Y.tolist (), labels.tolist ()))
+
+  for key, value in productCodesToClusters.iteritems ():
+    print "\t%d - %d\n" % (int (key), int (value))
+    print >> productToClustersFile, "\t%d - %d\n" % (int (key), int (value))
 
 def FitModels (models, productCode, cutOff, kFold, featureEvaluation, doPlot):
   """Fit an arbitrary number of models to the data and evaluate their
@@ -185,9 +205,9 @@ def main ():
 
   if options.cluster:
     if options.product_group_description:
-      Cluster (options.product_group_description, options.num_clusters, True)
+      Cluster (options.product_group_description, options.num_clusters, True, options.do_plots)
     elif options.department_description:
-      Cluster (options.department_description, options.num_clusters, False)
+      Cluster (options.department_description, options.num_clusters, False, options.do_plots)
     else:
       parser.error ("Must pass in department description or product group description in order to cluster by department")
 
