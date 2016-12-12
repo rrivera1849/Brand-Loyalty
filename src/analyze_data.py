@@ -6,14 +6,12 @@ from optparse import OptionGroup, OptionParser
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 
 from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.model_selection import cross_val_score
 from sklearn.feature_selection import RFECV
-from sklearn.cluster import KMeans
 
 def CreateAllProductHistograms ():
   """Creates every product ratio histogram.
@@ -37,35 +35,10 @@ def Cluster (description, numClusters, isProductGroup, doPlot):
   isProductgroup - true if description string is a product group description, false if it's department
   doPlot - if true, we do a 3D plot of our clusters and save them to a file
   """
-  (X, Y) = data_preprocessing.GetProductFeatures (description, isProductGroup)
+  productCodesToClusters = data_preprocessing.ClusterInternal (description, isProductGroup, numClusters, doPlot)
 
-  kMeans = KMeans (n_clusters=numClusters)
-  kMeans.fit (X)
-  labels = kMeans.labels_
-  
-  if doPlot:
-    figure =  plt.figure (1, figsize=(4, 3))
-    
-    ax = Axes3D(figure, rect=[0, 0, .95, 1], elev=48, azim=134)
-    ax.scatter(X.iloc[:, 2], X.iloc[:, 0], X.iloc[:, 1], c=labels.astype(np.float))
-
-    ax.w_xaxis.set_ticklabels([])
-    ax.w_yaxis.set_ticklabels([])
-    ax.w_zaxis.set_ticklabels([])
-    ax.set_xlabel('Brand Price Ratio')
-    ax.set_ylabel('Brand vs Non-Brand Ratio')
-    ax.set_zlabel('Unit Price')
-
-    plt.show ()
-    plt.savefig (utilities.outputFolder + description + '-' + str (numClusters) + '-cluster')
-    print 'Clusters saved to output folder.'
-    plt.close (figure)
-
-  
   productToClustersFile = open (utilities.outputFolder + description + "-" + \
                                 str (numClusters), "w+")
-
-  productCodesToClusters = dict (zip (Y.tolist (), labels.tolist ()))
 
   for key, value in productCodesToClusters.iteritems ():
     print "\t%d - %d\n" % (int (key), int (value))

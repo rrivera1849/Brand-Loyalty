@@ -1,10 +1,15 @@
 
+import itertools
+
 import utilities
 
 import numpy as np
 import pandas as pd
 import cPickle as pickle
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 
 def GetProductFeatures (description, isProductGroup):
@@ -48,6 +53,47 @@ def GetProductFeatures (description, isProductGroup):
   Y = merged['product_module_code']
 
   return (X, Y)
+
+def ClusterInternal (description, isProductGroup, numClusters, doPlot):
+  if '::' in description:
+    description = description.split ('::')
+    X = pd.DataFrame ()
+    Y = pd.Series ()
+  else:
+    (X, Y) = GetProductFeatures (description, isProductGroup)
+
+  if type (description) is list:
+    for descr in description:
+      (xNew, yNew) = GetProductFeatures (descr, isProductGroup)
+      X = pd.concat ([X, xNew])
+      Y = pd.concat ([Y, yNew])
+
+  kMeans = KMeans (n_clusters=numClusters)
+  kMeans.fit (X)
+  labels = kMeans.labels_
+
+  productCodesToClusters = dict (zip (Y.tolist (), labels.tolist ()))
+  
+  if doPlot:
+    figure =  plt.figure (1, figsize=(4, 3))
+    
+    ax = Axes3D(figure, rect=[0, 0, .95, 1], elev=48, azim=134)
+    ax.scatter(X.iloc[:, 2], X.iloc[:, 0], X.iloc[:, 1], c=labels.astype(np.float))
+
+    ax.w_xaxis.set_ticklabels([])
+    ax.w_yaxis.set_ticklabels([])
+    ax.w_zaxis.set_ticklabels([])
+    ax.set_xlabel('Brand Price Ratio')
+    ax.set_ylabel('Brand vs Non-Brand Ratio')
+    ax.set_zlabel('Unit Price')
+
+    plt.show ()
+    plt.savefig (utilities.outputFolder + description + '-' + str (numClusters) + '-cluster')
+    print 'Clusters saved to output folder.'
+    plt.close (figure)
+
+  return productCodesToClusters
+
 
 def GetHouseholdProductFrequencyByCode (productCode, saveFiles=False):
   """This method returns a table specifying how many brand vs non-brand
@@ -172,11 +218,30 @@ def PrepareData (productCode, cutOff, scale=True):
   else:
     (X, Y) = PrepareDataInternal (int (productCode))
 
+  # We will extract features by clustering products together
+  # Get all the product descriptions and cluster
+  print "Creating Clusters"
+  productDescriptions = []
+  for i in range (0, len (productCode)):
+    productDescriptions.append \
+        (utilities.productHierarchy[utilities.productHierarchy['product_module_code'] == int (productCode[i])].product_group_descr.to_string (index=False))
+
+  productDescriptions = list (set (productDescriptions))
+  productsToClusters = ClusterInternal ("::".join (productDescriptions), True, 5, False)
+
+
   # This is for the case where productCode is a string, here
   # we concatenate data from multiple products toguether 
   # TODO RARS - This might not be the right thing to do, think more
   for i in range (0, len (productCode)):
     (xNew, yNew) = PrepareDataInternal (int (productCode[i]))
+
+    currentCluster = productsToClusters[int (productCode[i])]
+    clustersColumn = []
+    for j in range (0, xNew.shape[0]):
+      clustersColumn.append(currentCluster)
+    xNew['cluster'] = pd.Series (clustersColumn).values
+
     X = pd.concat ([X, xNew])
     Y = pd.concat ([Y, yNew])
 
