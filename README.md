@@ -4,13 +4,10 @@ It is vital for marketers to determine which consumers are especially ‘brand l
 We seek to classify households as ‘brand loyal’ or not, and then use machine learning techniques to model demographic characteristics that contribute 
 to their loyalty or lack thereof. 
 
-# TODO Products to focus on
-- Milk 3625
-- Cereal 1344, 1346
-- Sauce 1111
-- Tomato Sauce 1109
-- Bacon 3577
-- Detergent 7012
-- Ketchup 1100
-- Olive Oil 1193
-- Storage Bags - 7290,7295,7301
+3625,1344,1346,1111,1109,3577,7012,1100,1193,7290,7295,7301,1188,8420,8425,8403,1060,4000,2672
+
+1. Table of Relevant Features for different products
+  - Contraceptives
+  - Milk
+2. Cluster picture with numClusters=3,4,5
+3. numClusters to performance
