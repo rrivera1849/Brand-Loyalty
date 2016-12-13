@@ -220,30 +220,27 @@ def PrepareData (productCode, cutOff, scale=True):
 
   # We will extract features by clustering products together
   # Get all the product descriptions and cluster
-  print "Creating Clusters"
-  productDescriptions = []
-  for i in range (0, len (productCode)):
-    productDescriptions.append \
-        (utilities.productHierarchy[utilities.productHierarchy['product_module_code'] == int (productCode[i])].product_group_descr.to_string (index=False))
+  if type (productCode) is list:
+    productDescriptions = []
+    for pc in productCode:
+      productDescriptions.append \
+          (utilities.productHierarchy[utilities.productHierarchy['product_module_code'] == int (pc)].department_descr.to_string (index=False))
 
-  productDescriptions = list (set (productDescriptions))
-  productsToClusters = ClusterInternal ("::".join (productDescriptions), True, 5, False)
+    productDescriptions = list (set (productDescriptions))
+    productsToClusters = ClusterInternal ("::".join (productDescriptions), False, 5, False)
 
+  if type (productCode) is list:
+    for pc in productCode:
+      (xNew, yNew) = PrepareDataInternal (int (pc))
 
-  # This is for the case where productCode is a string, here
-  # we concatenate data from multiple products toguether 
-  # TODO RARS - This might not be the right thing to do, think more
-  for i in range (0, len (productCode)):
-    (xNew, yNew) = PrepareDataInternal (int (productCode[i]))
+      currentCluster = productsToClusters[int (pc)]
+      clustersColumn = []
+      for j in range (0, xNew.shape[0]):
+        clustersColumn.append(currentCluster)
+      xNew['cluster'] = pd.Series (clustersColumn).values
 
-    currentCluster = productsToClusters[int (productCode[i])]
-    clustersColumn = []
-    for j in range (0, xNew.shape[0]):
-      clustersColumn.append(currentCluster)
-    xNew['cluster'] = pd.Series (clustersColumn).values
-
-    X = pd.concat ([X, xNew])
-    Y = pd.concat ([Y, yNew])
+      X = pd.concat ([X, xNew])
+      Y = pd.concat ([Y, yNew])
 
   # Preserve column names before applying scaling
   columnNames = X.columns.values.tolist ()
@@ -257,5 +254,8 @@ def PrepareData (productCode, cutOff, scale=True):
 
   # Seperate our ratio into two "bins"
   Y['ratio'] = np.where (Y.ratio >= cutOff, 1, 0)
+  # Y[Y['ratio'] <= 0.33] = 0
+  # Y[(Y['ratio'] > 0.33) & (Y['ratio'] <= 0.66)] = 1
+  # Y[Y['ratio'] > 0.66] = 2
 
   return (X, Y)
