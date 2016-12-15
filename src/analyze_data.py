@@ -60,9 +60,9 @@ def FitModels (models, productCode, cutOff, kFold, featureEvaluation, doPlot):
   names = []
   results = []
 
-  for name, model, multinomial in models:
+  for name, model in models:
     print 'Preparing Data!'
-    (X, Y) = data_preprocessing.PrepareData (productCode, cutOff, multinomial=multinomial)
+    (X, Y) = data_preprocessing.PrepareData (productCode, cutOff)
     columnNames = X.columns.values.tolist ()
 
     names.append (name)
@@ -215,6 +215,12 @@ def main ():
   generalGroup = OptionGroup (parser, "General Options", "These options may be requirements for any other options.") 
   generalGroup.add_option ('-p', '--product-code', dest='product_code', type='string')
   generalGroup.add_option ('-c', '--cut-off', dest='cutoff', type=float, default=0.5)
+  generalGroup.add_option ('--no-multinomial-prediction', dest='multinomial_prediction', \
+                           action='store_false', default=True)
+  generalGroup.add_option ('--no-cluster-feature', dest='cluster_feature', \
+                           action='store_false', default=True)
+  generalGroup.add_option ('--use-product-feature', dest='product_feature', \
+                           action='store_true', default=False)
   #=========================General Group End=========================#
 
   #=========================Model Group Start=========================#
@@ -264,6 +270,10 @@ def main ():
   
   (options, args) = parser.parse_args ()
 
+  data_preprocessing.MULTINOMIAL_PREDICTION = options.multinomial_prediction
+  data_preprocessing.CLUSTER_FEATURE = options.cluster_feature
+  data_preprocessing.PRODUCT_FEATURE = options.PRODUCT_FEATURE
+
   utilities.ReadAllPickledObjects ()
 
   if options.create_histograms:
@@ -292,14 +302,14 @@ def main ():
     models = []
 
     if options.run_svm == True:
-      models.append (('SVM Binary', SVC (), False))
+      models.append (('SVM Binary', SVC ()))
 
     if options.run_logistic == True:
-      models.append (('Logistic Regression Binary', LogisticRegression (), False))
-      models.append (('Logistic Regression Multinomial', LogisticRegression (), True))
+      models.append (('Logistic Regression Binary', LogisticRegression ()))
+      models.append (('Logistic Regression Multinomial', LogisticRegression ()))
 
     if options.run_ada_boost == True:
-      models.append (('AdaBoost Binary', AdaBoostClassifier (n_estimators=200), False))
+      models.append (('AdaBoost Binary', AdaBoostClassifier (n_estimators=200)))
 
     if len (models) > 0:
       FitModels (models, options.product_code, options.cutoff, options.k_fold, \

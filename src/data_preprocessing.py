@@ -12,6 +12,10 @@ from mpl_toolkits.mplot3d import Axes3D
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 
+CLUSTER_FEATURE = True
+PRODUCT_FEATURE = False
+MULTINOMIAL_PREDICTION = True
+
 def GetProductFeatures (description, isProductGroup):
   if isProductGroup:
     search = utilities.productHierarchy[utilities.productHierarchy['product_group_descr'] == description]
@@ -203,7 +207,7 @@ def PrepareDataInternal (productCode):
 
   return (merged, labels)
 
-def PrepareData (productCode, cutOff, multinomial=True, scale=True, numClusters=2):
+def PrepareData (productCode, cutOff, scale=True, numClusters=2):
   """This method prepares the data before running it through any algorithm.
      We optionally scale the data.
 
@@ -218,32 +222,56 @@ def PrepareData (productCode, cutOff, multinomial=True, scale=True, numClusters=
   else:
     (X, Y) = PrepareDataInternal (int (productCode))
 
-  # We will extract features by clustering products together
-  # Get all the product descriptions and cluster
   if type (productCode) is list:
     productDescriptions = []
     for pc in productCode:
       productDescriptions.append \
-          (utilities.productHierarchy[utilities.productHierarchy['product_module_code'] == int (pc)].department_descr.to_string (index=False))
+          (utilities.productHierarchy[utilities.productHierarchy['product_module_code'] == int (pc)].product_group_descr.to_string (index=False))
 
     productDescriptions = list (set (productDescriptions))
-    productsToClusters = ClusterInternal ("::".join (productDescriptions), False, numClusters, False)
+
+  if CLUSTER_FEATURE:
+    productsToClusters = ClusterInternal ("::".join (productDescriptions), True, numClusters, False)
+  elif PRODUCT_FEATURE:
+    XProd = YProd = pd.DataFrame ()
+    for descr in productDescriptions:
+      (XProdNew, YProdNew) = GetProductFeatures (descr, True)
+      YProdNew = pd.DataFrame (YProdNew)
+      XProd = pd.concat ([XProd, XProdNew])
+      YProd = pd.concat ([YProd, YProdNew])
+    XProd = XProd.drop ('brand_ratio', 1)
+
+    productFeatures = pd.concat ([XProd, YProd], 1)
+    del XProd, YProd
 
   if type (productCode) is list:
     for pc in productCode:
       (xNew, yNew) = PrepareDataInternal (int (pc))
 
-      currentCluster = productsToClusters[int (pc)]
-      clustersColumn = []
-      for j in range (0, xNew.shape[0]):
-        clustersColumn.append(currentCluster)
-      xNew['cluster'] = pd.Series (clustersColumn).values
+      if CLUSTER_FEATURE:
+        currentCluster = productsToClusters[int (pc)]
+        clustersColumn = []
+        for j in range (0, xNew.shape[0]):
+          clustersColumn.append(currentCluster)
+        xNew['cluster'] = pd.Series (clustersColumn).values
+      elif PRODUCT_FEATURE:
+        xNew['unit_price'] = pd.Series (
+            np.ones (xNew.shape[0]) * \
+            productFeatures.loc[productFeatures.product_module_code == int (pc)]['unit_price'].iloc[0] \
+            )
+
+        xNew['brand_price_ratio'] = pd.Series (
+            np.ones (xNew.shape[0]) * \
+            productFeatures.loc[productFeatures.product_module_code == int (pc)]['brand_price_ratio'].iloc[0] \
+            )
 
       X = pd.concat ([X, xNew])
       Y = pd.concat ([Y, yNew])
 
   # Preserve column names before applying scaling
   columnNames = X.columns.values.tolist ()
+
+  print columnNames
 
   if scale == True:
     scaler = StandardScaler ()
@@ -252,8 +280,7 @@ def PrepareData (productCode, cutOff, multinomial=True, scale=True, numClusters=
 
   X.columns = columnNames
 
-  # Seperate our ratio into two "bins"
-  if multinomial:
+  if MULTINOMIAL_PREDICTION:
     Y[Y['ratio'] <= 0.33] = 0
     Y[(Y['ratio'] > 0.33) & (Y['ratio'] <= 0.66)] = 1
     Y[Y['ratio'] > 0.66] = 2
@@ -281,10 +308,11 @@ def PrepareDataNoCluster (productCode, cutOff):
 
   X.columns = columnNames
 
-  # Seperate our ratio into two "bins"
-  # Y['ratio'] = np.where (Y.ratio >= cutOff, 1, 0)
-  Y[Y['ratio'] <= 0.33] = 0
-  Y[(Y['ratio'] > 0.33) & (Y['ratio'] <= 0.66)] = 1
-  Y[Y['ratio'] > 0.66] = 2
+  if MULTINOMIAL_PREDICTION:
+    Y[Y['ratio'] <= 0.33] = 0
+    Y[(Y['ratio'] > 0.33) & (Y['ratio'] <= 0.66)] = 1
+    Y[Y['ratio'] > 0.66] = 2
+  else:
+    Y['ratio'] = np.where (Y.ratio >= cutOff, 1, 0)
 
   return (X, Y)
