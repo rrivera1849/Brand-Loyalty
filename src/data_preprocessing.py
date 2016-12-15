@@ -203,7 +203,7 @@ def PrepareDataInternal (productCode):
 
   return (merged, labels)
 
-def PrepareData (productCode, cutOff, scale=True):
+def PrepareData (productCode, cutOff, multinomial=True, scale=True, numClusters=2):
   """This method prepares the data before running it through any algorithm.
      We optionally scale the data.
 
@@ -227,7 +227,7 @@ def PrepareData (productCode, cutOff, scale=True):
           (utilities.productHierarchy[utilities.productHierarchy['product_module_code'] == int (pc)].department_descr.to_string (index=False))
 
     productDescriptions = list (set (productDescriptions))
-    productsToClusters = ClusterInternal ("::".join (productDescriptions), False, 5, False)
+    productsToClusters = ClusterInternal ("::".join (productDescriptions), False, numClusters, False)
 
   if type (productCode) is list:
     for pc in productCode:
@@ -253,9 +253,38 @@ def PrepareData (productCode, cutOff, scale=True):
   X.columns = columnNames
 
   # Seperate our ratio into two "bins"
-  Y['ratio'] = np.where (Y.ratio >= cutOff, 1, 0)
-  # Y[Y['ratio'] <= 0.33] = 0
-  # Y[(Y['ratio'] > 0.33) & (Y['ratio'] <= 0.66)] = 1
-  # Y[Y['ratio'] > 0.66] = 2
+  if multinomial:
+    Y[Y['ratio'] <= 0.33] = 0
+    Y[(Y['ratio'] > 0.33) & (Y['ratio'] <= 0.66)] = 1
+    Y[Y['ratio'] > 0.66] = 2
+  else:
+    Y['ratio'] = np.where (Y.ratio >= cutOff, 1, 0)
+
+  return (X, Y)
+
+def PrepareDataNoCluster (productCode, cutOff):
+  if ',' in productCode:
+    productCode = productCode.split (',')
+    X = Y = pd.DataFrame ()
+  else:
+    (X, Y) = PrepareDataInternal (int (productCode))
+
+  if type (productCode) is list:
+    for pc in productCode:
+      (xNew, yNew) = PrepareDataInternal (int (pc))
+      xNew['product_code'] = np.ones (xNew.shape[0]) * int (pc)
+      X = pd.concat ([X, xNew])
+      Y = pd.concat ([Y, yNew])
+
+  # Preserve column names before applying scaling
+  columnNames = X.columns.values.tolist ()
+
+  X.columns = columnNames
+
+  # Seperate our ratio into two "bins"
+  # Y['ratio'] = np.where (Y.ratio >= cutOff, 1, 0)
+  Y[Y['ratio'] <= 0.33] = 0
+  Y[(Y['ratio'] > 0.33) & (Y['ratio'] <= 0.66)] = 1
+  Y[Y['ratio'] > 0.66] = 2
 
   return (X, Y)

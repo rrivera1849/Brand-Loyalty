@@ -57,13 +57,14 @@ def FitModels (models, productCode, cutOff, kFold, featureEvaluation, doPlot):
                       are the best
   doPlot - whether we do the boxplot or not
   """
-  (X, Y) = data_preprocessing.PrepareData (productCode, cutOff)
-  columnNames = X.columns.values.tolist ()
-
   names = []
   results = []
 
-  for name, model in models:
+  for name, model, multinomial in models:
+    print 'Preparing Data!'
+    (X, Y) = data_preprocessing.PrepareData (productCode, cutOff, multinomial=multinomial)
+    columnNames = X.columns.values.tolist ()
+
     names.append (name)
     scores = None
 
@@ -99,6 +100,7 @@ def FitModels (models, productCode, cutOff, kFold, featureEvaluation, doPlot):
         plt.close (fig)
 
     else:
+      print 'Running Model'
       scores = cross_val_score (model, X, Y.ratio.ravel (), cv=kFold, scoring='accuracy')
 
     results.append (scores)
@@ -114,6 +116,97 @@ def FitModels (models, productCode, cutOff, kFold, featureEvaluation, doPlot):
     x.set_xticklabels (names)
     plt.savefig (utilities.outputFolder + str (productCode) + '-algorithm-comparison')
     plt.close (fig)
+
+def ClusterPicture ():
+  productCode='3625,1344,1346,1111,1109,3577,7012,1100,1193,7290,7295,7301,1188,8420,8425,8403,1060,4000,2672,8404,1033,5000'
+  productCode = productCode.split (',')
+
+  productDescriptions = []
+  for pc in productCode:
+    productDescriptions.append \
+        (utilities.productHierarchy[utilities.productHierarchy['product_module_code'] == int (pc)].department_descr.to_string (index=False))
+
+  productDescriptions = list (set (productDescriptions))
+
+  numClusters = 2
+  productsToClusters = ClusterInternal ("::".join (productDescriptions), False, numClusters, True)
+
+def ClusterAnalysis ():
+  productCode='3625,1344,1346,1111,1109,3577,7012,1100,1193,7290,7295,7301,1188,8420,8425,8403,1060,4000,2672,8404,1033,5000'
+
+  results = []
+  numClusterList = range (1, 13)
+
+  print 'Preparing X Y Data'
+  (X, Y) = data_preprocessing.PrepareDataNoCluster (productCode, cutOff=0.5)
+  X['cluster'] = np.ones (X.shape[0]) * 0
+
+  print 'Creating Product Features'
+  productCode = productCode.split (',')
+  productDescriptions = []
+  for pc in productCode:
+    productDescriptions.append \
+        (utilities.productHierarchy[utilities.productHierarchy['product_module_code'] == int (pc)].department_descr.to_string (index=False))
+  productDescriptions = list (set (productDescriptions))
+
+  description = "::".join (productDescriptions)
+
+  if '::' in description:
+    description = description.split ('::')
+    XProd = pd.DataFrame ()
+    YProd = pd.Series ()
+  else:
+    (XProd, YProd) = GetProductFeatures (description, isProductGroup)
+
+  if type (description) is list:
+    for descr in description:
+      (xNew, yNew) = GetProductFeatures (descr, False)
+      XProd = pd.concat ([XProd, xNew])
+      YProd = pd.concat ([YProd, yNew])
+
+  for numCluster in numClusterList:
+    print 'Preparing cluster feature'
+
+    kMeans = KMeans (n_clusters=numCluster)
+    kMeans.fit (XProd)
+    labels = kMeans.labels_
+    productsToClusters = dict (zip (YProd.tolist (), labels.tolist ()))
+
+    uniqueProductCodes = X.product_code.unique ().tolist ()
+    for pc in uniqueProductCodes:
+      print pc
+      # X[X['product_code'] == int (pc)].cluster = productsToClusters[int (pc)]
+      X.loc[X.product_code == int (pc), 'cluster'] = productsToClusters[int (pc)]
+
+    print X.cluster.value_counts ()
+
+    columnNames = X.columns.values.tolist ()
+    # scaler = StandardScaler ()
+    # X = pd.DataFrame (scaler.fit_transform (X))
+    X.columns = columnNames
+
+    print 'Running logistic regression'
+    clf = LogisticRegression ()
+    scores = cross_val_score (clf, X.drop ('product_code', 1), Y.ratio.ravel (), cv=10, scoring='accuracy')
+    results.append (scores)
+
+    msg = "NumClusters=%d :: %f\n" % (numCluster, scores.mean ())
+    print msg
+
+  print numClusterList
+  print results
+
+  fig = plt.figure ()
+  plt.title ('KNN Performance')
+  plt.ylabel ('KFold Cross Validation Accuracy K=%d' % 10)
+  plt.xlabel ('Number of Clusters')
+  plt.gca ().set_xlim ([0, 13])
+  plt.plot (numClusterList, results, 'b')
+  plt.plot (numClusterList, results, 'bo')
+  plt.savefig (utilities.outputFolder + str (productCode) + '-cluster-analysis')
+  plt.close (fig)
+
+  print 'Cluster Analysis Finished!'
 
 def main ():
   parser = OptionParser ()
@@ -199,13 +292,14 @@ def main ():
     models = []
 
     if options.run_svm == True:
-      models.append (('SVM', SVC ()))
+      models.append (('SVM Binary', SVC (), False))
 
     if options.run_logistic == True:
-      models.append (('Logistic Regression', LogisticRegression ()))
+      models.append (('Logistic Regression Binary', LogisticRegression (), False))
+      models.append (('Logistic Regression Multinomial', LogisticRegression (), True))
 
     if options.run_ada_boost == True:
-      models.append (('AdaBoost', AdaBoostClassifier (n_estimators=200)))
+      models.append (('AdaBoost Binary', AdaBoostClassifier (n_estimators=200), False))
 
     if len (models) > 0:
       FitModels (models, options.product_code, options.cutoff, options.k_fold, \
