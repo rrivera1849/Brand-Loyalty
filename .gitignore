@@ -3,8 +3,6 @@
 #================================================
 data/*
 !data/.empty
-literature/*
-!literature/.empty
 output/*
 !output/.empty
 pickled-objects/*
