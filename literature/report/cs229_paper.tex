@@ -117,6 +117,7 @@
 %
 \ifCLASSINFOpdf
   \usepackage[pdftex]{graphicx}
+  \usepackage{wrapfig}
   % declare the path(s) where your graphic files are
   \graphicspath{{images/}}
   % and their extensions so you won't have to specify these with
@@ -307,6 +308,8 @@
 % to submit to, of course. )
 
 \usepackage{multirow}
+\usepackage{float}
+\usepackage{subfloat}
 
 % correct bad hyphenation here
 \hyphenation{op-tical net-works semi-conduc-tor}
@@ -377,8 +380,6 @@ We predict a household’s propensity to purchase national brand name products b
 \end{abstract}
 
 % no keywords
-
-
 
 
 % For peer review papers, you can put extra information on the cover
@@ -514,6 +515,17 @@ The data is stored in four separate datasets: Panelists, which contains all the 
 
 Each product module represents a group of UPCs that are essentially substitutes for one another. Examples include CEREAL - READY TO EAT, SEAFOOD-TUNA-SHELF STABLE, DAIRY-MILK-REFRIGERATED, and PAIN REMEDIES - HEADACHE.
 
+\begin{figure}[!htb]
+\minipage{0.5\textwidth}
+  \includegraphics[width=\linewidth]{histogram-1}
+  \caption{A really Awesome Image}\label{fig:awesome_image1}
+\endminipage\hfill
+\minipage{0.5\textwidth}
+  \includegraphics[width=\linewidth]{histogram-2}
+  \caption{A really Awesome Image}\label{fig:awesome_image2}
+\endminipage\hfill
+\end{figure}
+
 \subsection{Preprocessing}
 In order to prepare our data to use in our machine learning algorithms, we have to determine the purchase history of each household for a given product, and also calculate certain metrics for that product. An example is helpful for illustration: 
 
@@ -522,7 +534,7 @@ To get household purchase history for product module 5000, we filter the Product
 
 We also calculate the following metrics for product module 5000: average unit price, average brand/store brand price ratio, and total brand/store-brand purchase ratio. The average unit price is the total \$ spent / \# units purchased. The brand price ratio = (total \$ spent on brand / \# brand units purchased) / (total \$ spent on store brand / \# store brand units purchased). The brand purchase ratio = \# brand purchases / \# total purchases.
 
-We choose a collection of 25 representative products to make predictions about. We require each product to have more than 10,000 purchases in the year and we include a mix of products across departments, from FROZEN FOODS to ALCOHOLIC BEVERAGES to HEALTH \& BEAUTY. We are especially careful to select products that have a variety of household brand loyalty ratios. In general, most households were almost 100% ‘brand loyal’ or not for any given product. It is important to select products that at least have some households that are 100% ‘brand loyal’ and 0% ‘brand loyal’ so that our binary prediction models are meaningful. Some of our selected products are strongly ‘brand’ (detergent), some have mostly off-brand purchases (milk), while others are a mix of both (eggs).
+We choose a collection of 25 representative products to make predictions about. We require each product to have more than 10,000 purchases in the year and we include a mix of products across departments, from FROZEN FOODS to ALCOHOLIC BEVERAGES to HEALTH \& BEAUTY. We are especially careful to select products that have a variety of household brand loyalty ratios. In general, most households were almost 100\% ‘brand loyal’ or not for any given product. It is important to select products that at least have some households that are 100\% ‘brand loyal’ and 0\% ‘brand loyal’ so that our binary prediction models are meaningful. Some of our selected products are strongly ‘brand’ (detergent), some have mostly off-brand purchases (milk), while others are a mix of both (eggs).
 
 \subsection{Feature Selection}
 
@@ -531,6 +543,12 @@ The demographic information about each household in the Panelists file is quite 
 	
 For our machine learning algorithms, we chose as features income, race, household size, age and presence of children, and head male and female education and employment status. Each of these was a categorical variable and required us to create a dummy binary variable for each of its categories. For example, age\textunderscore and\textunderscore presence\textunderscore of\textunderscore children has eight different categories representing combinations of numbers and ages of children in the home. We reduced this to three binary categorical variables: has\textunderscore young\textunderscore children, has\textunderscore children, has\textunderscore teenagers. Age and income did not require dummy variables because their categories were granular and monotonically increasing. One notable feature we omitted was occupation, which simply had too many categories and mostly correlated with income.
 
+\begin{figure}
+\centering
+        \includegraphics[totalheight=6cm]{clusters}
+    \caption{Caption}
+    \label{fig:verticalcell}
+\end{figure}
 \section{Methods}
 
 \subsection{Logistic Regression}
@@ -550,7 +568,7 @@ P(y = 0 | x;\theta) = 1 - h_\theta(x)
 We based our initial predictions on products whose distributions between branded buyers and non-branded buyers was almost even. We labeled someone as being on the ``branded-buyer" class if they're above the ratio cut-off value of 0.5, all other consumers were labeled as belonging to the``non-branded" class. 
 
 \subsection{Support Vector Machines}
-The Support Vector Machine is a discriminative classifier that finds an optimal hyperplane  with the largest margin between the classes. These models also allow us to implicitly map our input features into a high-dimensional feature space where the optimal hyper-plane might result in a better division between the classes. These feature mappings are called kernels. In our implementation, we used the Radial Basis Function (RBF) kernel (Eq. 3). SVM's use a particular choice of the loss function called the ``Hinge Loss" (Eq. 4). To fit this model, we use an algorithm such as Stochastic Gradient Descent to adjusts our weights in such a way that the Hingle Loss is minimized. We used this model in the binary classification model described above and compare the effectiveness.
+The Support Vector Machine is a discriminative classifier that finds an optimal hyperplane  with the largest margin between the classes. These models also allow us to implicitly map our input features into a high-dimensional feature space where the optimal hyper-plane might result in a better division between the classes. These feature mappings are called kernels. In our implementation, we used the Radial Basis Function (RBF) kernel (Eq. 3). SVMs use a particular choice of the loss function called the ``Hinge Loss" (Eq. 4). To fit this model, we use an algorithm such as Stochastic Gradient Descent to adjusts our weights in such a way that the Hinge Loss is minimized. We used this model in the binary classification model described above and compare the effectiveness.
 
 \begin{equation}
 K(x,x') = exp (-\frac{||x-x'||^2}{2\sigma^2})
@@ -589,20 +607,28 @@ p(y = i | x;\theta) = \frac{e^{\eta_i}}{\sum_{j=1}^{k} e^{\theta_j^Tx}}
 
 \subsection{Results}
 
+\begin{figure}[t]
+    \centering
+    \begin{minipage}{.5\textwidth}
+        \centering
+        \includegraphics[width=1\linewidth, height=0.30\textheight]{confusion-matrix-binary}
+        \caption{Confusion Matrix for Binary Prediction}
+    \end{minipage}
+    \begin{minipage}{0.5\textwidth}
+        \centering
+        \includegraphics[width=1\linewidth, height=0.30\textheight]{confusion-matrix-multinomial}
+        \caption{Confusion Matrix for Multinomial Prediction}
+    \end{minipage}
+\end{figure}
+
 \subsection{Discussion}
 Multinomial logistic regression has the highest accuracy on the test set (96.2\%), which makes sense because it allows for a more robust representation of households’ brand loyalty. The regular logistic model performs slightly worse (95.5\%) because it only accounts for households who are on either extreme of the spectrum, while the multinomial establishes a class for the brand neutral consumer who buys a good mix of national brand and store brand products. We considered extending this to four or five categories, but decided that three is most logical for labelling a household. It would be interesting to only choose products with a relatively uniform brand loyalty distribution and see if the multinomial’s performance relative to regular logistic improved.
 
 
-The demographic features contributing to brand purchases are somewhat logical. Brands cost more, so higher earners can afford to pay a premium while lower earners opt for cheaper store brand replacements. Older females often make most of a household’s grocery purchases, and they are likely to have settled on a reliable brand. Household size should be explored further, as it is unclear why a larger household indicates greater brand loyalty. It could be that this correlates with larger families, who rely on making quick shopping trips and do not want to `test taste' unknown store brands. 
+The demographic features contributing to brand purchases are somewhat logical. Brands cost more, so higher earners can afford to pay a premium while lower earners opt for cheaper store brand replacements. Older females often make most of a household’s grocery purchases, and they are likely to have settled on a reliable brand. Household size should be explored further, as it is unclear why a larger household indicates greater brand loyalty. It could be that this correlates with larger families, who rely on making quick shopping trips and do not want to `taste test' unknown store brands. 
 An interesting discovery is that certain premium products (e.g. brand eggs) are preferred by households with white, educated women. Education and race were among the least predictive factors in our overall recursive factor elimination, but they jumped to the top in a few products. This is somewhat of an extension of the pattern observed in Bronnenberg et al.\cite{bronnenberg2014pharmacists} that certain more informed consumers favor store brands when buying homogenous products. However, it could be stated that premium products actually have qualities in their brand varieties that make informed shoppers prefer them (e.g. organic or cage-free eggs).
 Drawing a direct link between a head of house’s age, education, or work and brand loyalty is challenging because our dataset does not indicate which member of the household made various grocery purchases. Having this information would allow for examining how a person’s demographics affect their spouse’s buying decisions and vice versa.
 
-\begin{figure}
-\centering
-        \includegraphics[totalheight=6cm]{clusters}
-    \caption{Caption}
-    \label{fig:verticalcell}
-\end{figure}
 
 \begin{figure}
 \centering
@@ -611,18 +637,11 @@ Drawing a direct link between a head of house’s age, education, or work and br
     \label{fig:verticalcell}
 \end{figure}
 
-\begin{figure}[!htb]
-    \centering
-    \begin{minipage}{.5\textwidth}
-        \centering
-        \includegraphics[width=1\linewidth, height=0.30\textheight]{confusion-matrix-binary}
-        \caption{Confusion Matrix for Binary Prediction}
-    \end{minipage}%
-    \begin{minipage}{0.5\textwidth}
-        \centering
-        \includegraphics[width=1\linewidth, height=0.30\textheight]{confusion-matrix-multinomial}
-        \caption{Confusion Matrix for Multinomial Prediction}
-    \end{minipage}
+\begin{figure}
+\centering
+        \includegraphics[totalheight=6cm]{algorithm-comparison}
+    \caption{Caption}
+    \label{fig:verticalcell}
 \end{figure}
 
 \begin{center}
