@@ -92,7 +92,7 @@
 
 % *** CITATION PACKAGES ***
 %
-%\usepackage{cite}
+\usepackage{cite}
 % cite.sty was written by Donald Arseneau
 % V1.6 and later of IEEEtran pre-defines the format of the cite.sty package
 % \cite{} output to follow that of the IEEE. Loading the cite package will
@@ -310,7 +310,9 @@
 
 % correct bad hyphenation here
 \hyphenation{op-tical net-works semi-conduc-tor}
-
+\makeatletter
+\setlength{\@fptop}{0pt}
+\makeatother
 
 \begin{document}
 %
@@ -371,7 +373,7 @@
 % As a general rule, do not put math, special symbols or citations
 % in the abstract
 \begin{abstract}
-The abstract goes here.
+We predict a household’s propensity to purchase national brand name products based on a number of demographic factors, including age, education, race, and income. We find that higher income, older, and larger households are more likely to purchase brand name products as opposed to generic store brands. We use households and purchases from the Nielsen scanner dataset, and employ various machine learning algorithms to make predictions. Using a categorical variable to represent a household’s brand loyalty, we are able to achieve a 96\% prediction accuracy on our test set of households across 25 products.
 \end{abstract}
 
 % no keywords
@@ -493,13 +495,13 @@ For a given product, we label households as ‘brand loyal’ or not based on th
 
 
 \section{Related Work}
-Brand loyalty has been extensively studied by economists and marketing researchers. Often their research focuses on a specific demographic group and observes whether this group has different behavior than the population at large. Bronnenberg et al. examines grocery purchases by consumers who are particularly well-informed about the homogeneity of certain brand and store-brand products and observes that they purchase the cheaper store brand more often than the average shopper. They are able to do this by matching employment information (choosing medical professionals and chefs) with domain-specific products (pain medication and baking goods). In a more recent paper, Bronnenberg et al. examines households that have lived in multiple regions of the United States in their lifetime and finds that the ‘brand capital’ they have developed in the past makes them have different brand loyalties than similar consumers in their current region.
+Brand loyalty has been extensively studied by economists and marketing researchers\cite{KAMAKURA19939} \cite{bronnenberg2016formation}. Often their research focuses on a specific demographic group and observes whether this group has different behavior than the population at large. Bronnenberg et al.\cite{bronnenberg2014pharmacists} examines grocery purchases by consumers who are particularly well-informed about the homogeneity of certain brand and store-brand products and observes that they purchase the cheaper store brand more often than the average shopper. They are able to do this by matching employment information (choosing medical professionals and chefs) with domain-specific products (pain medication and baking goods). In a more recent paper, Bronnenberg et al.\cite{bronnenberg2012evolution} examines households that have lived in multiple regions of the United States in their lifetime and finds that the ‘brand capital’ they have developed in the past makes them have different brand loyalties than similar consumers in their current region.
 
 
-The most common use of machine learning algorithms in consumer behavior research is to create ‘market baskets,’ or products that are frequently purchased together. This is useful when trying to develop marketing campaigns to mesh multiple product categories, but it does little to explain which consumers might prefer to buy a brand of a particular product. As evidence of the increasing interest in applying machine learning to the field, the popular data science website kaggle.com has hosted multiple competitions to develop models related to grocery purchases. These include a problem posed by a marketing research firm to predict when shoppers will visit a store next and how much they will spend, as well as a problem from Walmart to classify different types of shopping trips.
+The most common use of machine learning algorithms in consumer behavior research is to create ‘market baskets,’ or products that are frequently purchased together\cite{mcauley2015inferring}. This is useful when trying to develop marketing campaigns to mesh multiple product categories, but it does little to explain which consumers might prefer to buy a brand of a particular product. As evidence of the increasing interest in applying machine learning to the field, the popular data science website kaggle.com has hosted multiple competitions to develop models related to grocery purchases\cite{kaggleDunn}\cite{kaggleWalmart}. These include a problem posed by a marketing research firm to predict when shoppers will visit a store next and how much they will spend, as well as a problem from Walmart to classify different types of shopping trips.
 
 
-The previous approaches to brand loyalty have studied specific groups and how they behave differently, while machine learning in the grocery space has dealt mostly with clustering of substitute and complementary products. We will instead focus on what characteristics of the average consumer contributes to his or her brand purchasing choices. This analysis allows us to address the most pressing question for marketers - which slice of the population they should focus their limited advertising revenue on to maximize the success of their brand, both in the short term and long term.
+The previous approaches to brand loyalty have studied specific groups and how they behave differently, while machine learning in the grocery space has dealt mostly with clustering of substitute and complementary products. We will instead focus on what characteristics of the average consumer contributes to his or her brand purchasing choices. This analysis allows us to address the most pressing question for marketers - which slice of the population they should focus their limited advertising revenue on to maximize the success of their brand, both in the short term and long term\cite{witten2005data}.
 
 \section{Dataset and Features}
 
@@ -565,7 +567,7 @@ The idea of this model is to take a weak learning algorithm, that is, any learni
 \sum_{i=1}^{m} p^{(i)} 1 \{y^{(i)} \neq \phi_j(x^{(i)})\}  \leq \frac{1}{2} - \gamma
 \end{equation}
 
-\subsection{Softmax Regression}
+\subsection{Multinomial Logistic Regression}
 After our initial efforts, we decided to extend our model to incorporate more than one class. In particular, we chose to divide consumers into three bins using cutoffs at 0.33 and at 0.66. This resulted in the following class division:
 
 \begin{equation}
@@ -588,9 +590,12 @@ p(y = i | x;\theta) = \frac{e^{\eta_i}}{\sum_{j=1}^{k} e^{\theta_j^Tx}}
 \subsection{Results}
 
 \subsection{Discussion}
-Multinomial logistic regression allows us to capture the middle group of brand neutral consumers, so it makes sense that this has the highest accuracy.
-The demographic features contributing to brand purchases are somewhat logical. Brands cost more, so higher earners can afford to pay a premium while lower earners opt for off-brand replacements. Older females often make most of a household’s grocery purchases, and they are likely to have settled on a reliable brand. Household size should be explored further, as it is unclear what that indicates about brand loyalty. An interesting discovery is that certain premium products (e.g. brand eggs) are preferred by households with white, educated women. 
-Future work could focus on finding a marketing strategy that attracts new customers to a brand. We could predict which groups of consumers will be most likely to switch from off-brand to brand products and then calculate potential profits from these new consumer purchases.
+Multinomial logistic regression has the highest accuracy on the test set (96.2\%), which makes sense because it allows for a more robust representation of households’ brand loyalty. The regular logistic model performs slightly worse (95.5\%) because it only accounts for households who are on either extreme of the spectrum, while the multinomial establishes a class for the brand neutral consumer who buys a good mix of national brand and store brand products. We considered extending this to four or five categories, but decided that three is most logical for labelling a household. It would be interesting to only choose products with a relatively uniform brand loyalty distribution and see if the multinomial’s performance relative to regular logistic improved.
+
+
+The demographic features contributing to brand purchases are somewhat logical. Brands cost more, so higher earners can afford to pay a premium while lower earners opt for cheaper store brand replacements. Older females often make most of a household’s grocery purchases, and they are likely to have settled on a reliable brand. Household size should be explored further, as it is unclear why a larger household indicates greater brand loyalty. It could be that this correlates with larger families, who rely on making quick shopping trips and do not want to `test taste' unknown store brands. 
+An interesting discovery is that certain premium products (e.g. brand eggs) are preferred by households with white, educated women. Education and race were among the least predictive factors in our overall recursive factor elimination, but they jumped to the top in a few products. This is somewhat of an extension of the pattern observed in Bronnenberg et al.\cite{bronnenberg2014pharmacists} that certain more informed consumers favor store brands when buying homogenous products. However, it could be stated that premium products actually have qualities in their brand varieties that make informed shoppers prefer them (e.g. organic or cage-free eggs).
+Drawing a direct link between a head of house’s age, education, or work and brand loyalty is challenging because our dataset does not indicate which member of the household made various grocery purchases. Having this information would allow for examining how a person’s demographics affect their spouse’s buying decisions and vice versa.
 
 \begin{figure}
 \centering
@@ -606,29 +611,29 @@ Future work could focus on finding a marketing strategy that attracts new custom
     \label{fig:verticalcell}
 \end{figure}
 
-\begin{figure}
-\centering
-        \includegraphics[totalheight=6cm]{confusion-matrix-binary}
-    \caption{Caption}
-    \label{fig:verticalcell}
-\end{figure}
-
-\begin{figure}
-\centering
-        \includegraphics[totalheight=6cm]{confusion-matrix-multinomial}
-    \caption{Caption}
-    \label{fig:verticalcell}
+\begin{figure}[!htb]
+    \centering
+    \begin{minipage}{.5\textwidth}
+        \centering
+        \includegraphics[width=1\linewidth, height=0.30\textheight]{confusion-matrix-binary}
+        \caption{Confusion Matrix for Binary Prediction}
+    \end{minipage}%
+    \begin{minipage}{0.5\textwidth}
+        \centering
+        \includegraphics[width=1\linewidth, height=0.30\textheight]{confusion-matrix-multinomial}
+        \caption{Confusion Matrix for Multinomial Prediction}
+    \end{minipage}
 \end{figure}
 
 \begin{center}
-\scalebox{0.5}{
+\scalebox{0.7}{
 \begin{tabular}{ |c|c|c|c|c|c| } 
 \hline
-Overall & Eggs & Bacon & Contraceptives & Protein Supplements & Ketchup  \\
+Overall & Eggs & Bacon & Contraceptives & Ketchup  \\
 \hline
-Income & White & Income & Income & Income & Income  \\
-Household Size & Female Education & Female Age & Household Size & Household Size & White \\
-Female Age & Income & Male Age & Age/Presence of Children & Age/Presence of Children & Female Age \\
+Income & White & Income & Income & Income  \\
+Household Size & Female Education & Female Age & Household Size & White \\
+Female Age & Income & Male Age & Age/Presence of Children & Female Age \\
 \hline
 \end{tabular}
 }
@@ -662,22 +667,13 @@ The conclusion goes here.
 % http://mirror.ctan.org/biblio/bibtex/contrib/doc/
 % The IEEEtran BibTeX style support page is at:
 % http://www.michaelshell.org/tex/ieeetran/bibtex/
-%\bibliographystyle{IEEEtran}
+\bibliographystyle{IEEEtran}
 % argument is your BibTeX string definitions and bibliography database(s)
-%\bibliography{IEEEabrv,../bib/paper}
+\bibliography{dataappendix}
 %
 % <OR> manually copy in the resultant .bbl file
 % set second argument of \begin to the number of references
 % (used to reserve space for the reference number labels box)
-\begin{thebibliography}{1}
-
-\bibitem{IEEEhowto:kopka}
-H.~Kopka and P.~W. Daly, \emph{A Guide to \LaTeX}, 3rd~ed.\hskip 1em plus
-  0.5em minus 0.4em\relax Harlow, England: Addison-Wesley, 1999.
-
-\end{thebibliography}
-
-
 
 
 % that's all folks
