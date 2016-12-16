@@ -392,7 +392,9 @@ The abstract goes here.
 
 \section{Introduction}
 % no \IEEEPARstart
-The Introduction goes here.
+Brand loyalty is a chief concern for marketers of grocery products. Consumers will often buy the same brand of a household good for their entire lives. It is vital for product marketers to determine which consumers are especially ‘brand loyal’ so that the marketers can target advertising and promotions toward them. 
+For most grocery items, consumers are presented with the choice of purchasing a brand name product or a store brand product. Well-known national brands include Kellogg’s cereal, Heinz ketchup, and Tide detergent, while store brands include Costco’s Kirkland, Target’s Market Pantry, and Walmart’s Great Value. Despite a brand product often being more expensive than its store brand counterpart, many consumers prefer the reliability and known quality of the national brand. This brand preference or loyalty widely varies across different households and especially across different product types. We use machine learning techniques to predict a household’s preference for brand name products and determine what factors into that predilection.
+For a given product, we label households as ‘brand loyal’ or not based on the brand ratio of their past purchases. Our algorithm takes as inputs the demographics of a household along with product-specific parameters. We then use logistic regression, support vector machines, and adaptive boosting to predict the household’s brand loyalty for that product. We also experiment with using the k-nearest neighbors algorithm to find similar product clusters and utilize these clusters as a feature in our final brand loyalty prediction.
 
 % An example of a floating figure using the graphicx package.
 % Note that \label must occur AFTER (or within) \caption.
@@ -490,15 +492,18 @@ The Introduction goes here.
 
 
 \section{Related Work}
-The related work goes here.
+Brand loyalty has been extensively studied by economists and marketing researchers. Often their research focuses on a specific demographic group and observes whether this group has different behavior than the population at large. Bronnenberg et al. examines grocery purchases by consumers who are particularly well-informed about the homogeneity of certain brand and store-brand products and observes that they purchase the cheaper store brand more often than the average shopper. They are able to do this by matching employment information (choosing medical professionals and chefs) with domain-specific products (pain medication and baking goods). In a more recent paper, Bronnenberg et al. examines households that have lived in multiple regions of the United States in their lifetime and finds that the ‘brand capital’ they have developed in the past makes them have different brand loyalties than similar consumers in their current region.
+Machine learning algorithms are commonly used in the consumer product area to create 
+We were unable to find any grocery shopping academic research that utilized machine learning techniques, but there is ample evidence that there is a growing demand for it in the industry. The popular data science website kaggle.com has hosted multiple competitions to develop models related to grocery purchases. These include a problem posed by a marketing research firm to predict when shoppers will visit a store next and how much they will spend, as well as a problem from Walmart to classify different types of shopping trips.
 
 \section{Dataset and Features}
-The Dataset and Features go here.
+We use the grocery purchases reported in the Nielsen Consumer Panel Dataset to determine brand loyalty, and then use the household’s demographic information found in the same dataset to make our model. 
+We begin by examining particular products that have many occurrences in the dataset and also have a relatively balanced split in brand loyalty. We experimented with linear and logistic regression, finding much more success with the latter. It shows that the household size and whether a person is of hispanic or asian origin has an impact. We plan to expand our product basket as we perfect the method on our initial choices.
 
 \section{Methods}
 
 \subsection{Logistic Regression}
-Our initial efforts were concentrated upon whether consumers tend to buy more branded or non-branded products. This is a binary classification task for which we implemented a Logistic Regression model. Logistic Regression squashes the output of the model in the range $y = \{0,1\} $  using the sigmoid function (Eq. 1). The output values are then interpreted as the probabilities, thus any output greater than 0.5 is classified as belonging to the positive class and to the negative class otherwise (Eq. 2).
+Our initial efforts were concentrated upon whether consumers tend to buy more branded or non-branded products. This is a binary classification task for which we implemented a Logistic Regression model. A Logistic Regression squashes the output of the model in the range $y = \{0,1\} $  using the sigmoid function (Eq. 1). The output values are then interpreted as the probabilities, thus any output greater than 0.5 is classified as belonging to the positive class and to the negative class otherwise (Eq. 2).
 
 \begin{equation}
 h_\theta(x) = g(\theta^Tx) =  \frac{1}{1 + e^{-\theta^Tx}}
@@ -511,11 +516,27 @@ P(y = 0 | x;\theta) = 1 - h_\theta(x)
 \end{aligned}
 \end{equation}
 
-We based our initial predictions on products whose distributions between branded buyers and non-branded buyers was almost even. We labeled someone as being on the "branded-buyer" class if they're above the ratio cut-off value of 0.5, all other consumers were labeled as belonging to the "non-branded" class. 
+We based our initial predictions on products whose distributions between branded buyers and non-branded buyers was almost even. We labeled someone as being on the ``branded-buyer" class if they're above the ratio cut-off value of 0.5, all other consumers were labeled as belonging to the``non-branded" class. 
 
 \subsection{Support Vector Machines}
+The Support Vector Machine is a discriminative classifier that finds an optimal hyperplane  with the largest margin between the classes. These models also allow us to implicitly map our input features into a high-dimensional feature space where the optimal hyper-plane might result in a better division between the classes. These feature mappings are called kernels. In our implementation, we used the Radial Basis Function (RBF) kernel (Eq. 3). SVM's use a particular choice of the loss function called the ``Hinge Loss" (Eq. 4). To fit this model, we use an algorithm such as Stochastic Gradient Descent to adjusts our weights in such a way that the Hingle Loss is minimized. We used this model in the binary classification model described above and compare the effectiveness.
 
-\subsection{Adaptive Boosting}
+\begin{equation}
+K(x,x') = exp (-\frac{||x-x'||^2}{2\sigma^2})
+\end{equation}
+
+\begin{equation}
+\delta(z,y) = max \{0,1-yz\}
+\end{equation}
+
+\subsection{Boosting}
+The idea of this model is to take a weak learning algorithm, that is, any learning algorithm that does slightly better than random and transform it to a strong classifier that does much better than random. Roughly, this method begins by assigning every training example equal weight. It the receives a weak-hypothesis that does well according to the current weights. A weak hypothesis is an algorithm that takes as inputs some distribution (weights) $p$ and outputs a weak learner that does better than random (Eq. 5). It then re-weights the examples in such a way that incorrect classifications receive higher weights and correct classifications receives lower weights. In this way, boosting is able to create a strong hypothesis that generalizes well to new examples.
+
+\begin{equation}
+\sum_{i=1}^{m} p^{(i)} 1 \{y^{(i)} \neq \phi_j(x^{(i)})\}  \leq \frac{1}{2} - \gamma
+\end{equation}
+
+\subsection{Softmax Regression}
 
 \section{Results}
 The results go here.
