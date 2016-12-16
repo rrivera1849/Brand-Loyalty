@@ -159,7 +159,7 @@
 
 % *** MATH PACKAGES ***
 %
-%\usepackage{amsmath}
+\usepackage{amsmath}
 % A popular package from the American Mathematical Society that provides
 % many useful and powerful commands for dealing with mathematics.
 %
@@ -327,10 +327,10 @@
 % affiliations
 \author{
 \IEEEauthorblockN{Rafael Rivera-Soto}
-\IEEEauthorblockA{Email: rivera43@stanford.edu}
+\IEEEauthorblockA{rivera43@stanford.edu}
 \and
 \IEEEauthorblockN{Daniel Gardner}
-\IEEEauthorblockA{Email: dangard@stanford.edu}
+\IEEEauthorblockA{dangard@stanford.edu}
 }
 
 % conference papers do not typically use \thanks and this command
@@ -496,7 +496,26 @@ The related work goes here.
 The Dataset and Features go here.
 
 \section{Methods}
-The methods go here.
+
+\subsection{Logistic Regression}
+Our initial efforts were concentrated upon whether consumers tend to buy more branded or non-branded products. This is a binary classification task for which we implemented a Logistic Regression model. Logistic Regression squashes the output of the model in the range $y = \{0,1\} $  using the sigmoid function (Eq. 1). The output values are then interpreted as the probabilities, thus any output greater than 0.5 is classified as belonging to the positive class and to the negative class otherwise (Eq. 2).
+
+\begin{equation}
+h_\theta(x) = g(\theta^Tx) =  \frac{1}{1 + e^{-\theta^Tx}}
+\end{equation}
+
+\begin{equation}
+\begin{aligned}
+P(y = 1 | x;\theta) = h_\theta(x) \\
+P(y = 0 | x;\theta) = 1 - h_\theta(x)
+\end{aligned}
+\end{equation}
+
+We based our initial predictions on products whose distributions between branded buyers and non-branded buyers was almost even. We labeled someone as being on the "branded-buyer" class if they're above the ratio cut-off value of 0.5, all other consumers were labeled as belonging to the "non-branded" class. 
+
+\subsection{Support Vector Machines}
+
+\subsection{Adaptive Boosting}
 
 \section{Results}
 The results go here.
