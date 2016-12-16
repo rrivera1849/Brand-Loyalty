@@ -116,9 +116,9 @@
 % *** GRAPHICS RELATED PACKAGES ***
 %
 \ifCLASSINFOpdf
-  % \usepackage[pdftex]{graphicx}
+  \usepackage[pdftex]{graphicx}
   % declare the path(s) where your graphic files are
-  % \graphicspath{{../pdf/}{../jpeg/}}
+  \graphicspath{{images/}}
   % and their extensions so you won't have to specify these with
   % every instance of \includegraphics
   % \DeclareGraphicsExtensions{.pdf,.jpeg,.png}
@@ -493,8 +493,8 @@ For a given product, we label households as ‘brand loyal’ or not based on th
 
 \section{Related Work}
 Brand loyalty has been extensively studied by economists and marketing researchers. Often their research focuses on a specific demographic group and observes whether this group has different behavior than the population at large. Bronnenberg et al. examines grocery purchases by consumers who are particularly well-informed about the homogeneity of certain brand and store-brand products and observes that they purchase the cheaper store brand more often than the average shopper. They are able to do this by matching employment information (choosing medical professionals and chefs) with domain-specific products (pain medication and baking goods). In a more recent paper, Bronnenberg et al. examines households that have lived in multiple regions of the United States in their lifetime and finds that the ‘brand capital’ they have developed in the past makes them have different brand loyalties than similar consumers in their current region.
-Machine learning algorithms are commonly used in the consumer product area to create 
-We were unable to find any grocery shopping academic research that utilized machine learning techniques, but there is ample evidence that there is a growing demand for it in the industry. The popular data science website kaggle.com has hosted multiple competitions to develop models related to grocery purchases. These include a problem posed by a marketing research firm to predict when shoppers will visit a store next and how much they will spend, as well as a problem from Walmart to classify different types of shopping trips.
+The most common use of machine learning algorithms in consumer behavior research is to create ‘market baskets,’ or products that are frequently purchased together. This is useful when trying to develop marketing campaigns to mesh multiple product categories, but it does little to explain which consumers might prefer to buy a brand of a particular product. The popular data science website kaggle.com has hosted multiple competitions to develop models related to grocery purchases. These include a problem posed by a marketing research firm to predict when shoppers will visit a store next and how much they will spend, as well as a problem from Walmart to classify different types of shopping trips.
+The previous approaches to brand loyalty have studied specific groups and how they behave differently, while machine learning in the grocery space has dealt mostly with clustering of substitute and complementary products. We will instead focus on what characteristics of the average consumer contributes to his or her brand purchasing choices. 
 
 \section{Dataset and Features}
 We use the grocery purchases reported in the Nielsen Consumer Panel Dataset to determine brand loyalty, and then use the household’s demographic information found in the same dataset to make our model. 
@@ -530,16 +530,47 @@ K(x,x') = exp (-\frac{||x-x'||^2}{2\sigma^2})
 \end{equation}
 
 \subsection{Boosting}
-The idea of this model is to take a weak learning algorithm, that is, any learning algorithm that does slightly better than random and transform it to a strong classifier that does much better than random. Roughly, this method begins by assigning every training example equal weight. It the receives a weak-hypothesis that does well according to the current weights. A weak hypothesis is an algorithm that takes as inputs some distribution (weights) $p$ and outputs a weak learner that does better than random (Eq. 5). It then re-weights the examples in such a way that incorrect classifications receive higher weights and correct classifications receives lower weights. In this way, boosting is able to create a strong hypothesis that generalizes well to new examples.
+The idea of this model is to take a weak learning algorithm, that is, any learning algorithm that does slightly better than random and transform it to a strong classifier that does much better than random. Roughly, this method begins by assigning every training example equal weight. It then receives a weak-hypothesis that does well according to the current weights. A weak hypothesis is an algorithm that takes as inputs some distribution (weights) $p$ and outputs a weak learner that does better than random (Eq. 5). After evaluating the results after incorporating the new hypothesis, it re-weights the examples in such a way that incorrect classifications receive higher weights and correct classifications receives lower weights. In this way, boosting is able to create a strong hypothesis that generalizes well to new examples.
 
 \begin{equation}
 \sum_{i=1}^{m} p^{(i)} 1 \{y^{(i)} \neq \phi_j(x^{(i)})\}  \leq \frac{1}{2} - \gamma
 \end{equation}
 
 \subsection{Softmax Regression}
+After our initial efforts, we decided to extend our model to incorporate more than one class. In particular, we chose to divide consumers into three bins using cutoffs at 0.33 and at 0.66 (Eq. 6).
+
+\begin{equation}
+C=
+\begin{cases}
+0, \text{if}\ ratio < 0.33 \\
+1, \text{if}\ 0.33 \leq ratio < 0.66 \\
+2, \text{if}\ ratio \geq 0.66
+\end{cases}
+\end{equation}
+
+All of our previous models have been binary classifiers. In order to account for more classes we fit a Softmax Regression model. This is a generalization of the Logistic Regression models to multiple classes. In particular, Softmax Regression uses the Multinomial Distribution. The probability that our features take on a certain class is given by Eq. 7.
+
+\begin{equation}
+p(y = i | x;\theta) = \frac{e^{\eta_i}}{\sum_{j=1}^{k} e^{\theta_j^Tx}}
+\end{equation}
 
 \section{Results}
-The results go here.
+Results go here.
+
+\begin{figure}
+\centering
+        \includegraphics[totalheight=6cm]{clusters}
+    \caption{Caption}
+    \label{fig:verticalcell}
+\end{figure}
+
+\begin{figure}
+\centering
+        \includegraphics[totalheight=6cm]{cluster-analysis-combined}
+    \caption{Caption}
+    \label{fig:verticalcell}
+\end{figure}
+
 
 \section{Conclusion}
 The conclusion goes here.
