@@ -226,23 +226,24 @@ def PrepareData (productCode, cutOff, scale=True, numClusters=2):
     productDescriptions = []
     for pc in productCode:
       productDescriptions.append \
-          (utilities.productHierarchy[utilities.productHierarchy['product_module_code'] == int (pc)].product_group_descr.to_string (index=False))
+          (utilities.productHierarchy[utilities.productHierarchy['product_module_code'] == int (pc)].department_descr.to_string (index=False))
 
     productDescriptions = list (set (productDescriptions))
+  
+  if type (productCode) is list:
+    if CLUSTER_FEATURE:
+      productsToClusters = ClusterInternal ("::".join (productDescriptions), False, numClusters, False)
+    elif PRODUCT_FEATURE:
+      XProd = YProd = pd.DataFrame ()
+      for descr in productDescriptions:
+        (XProdNew, YProdNew) = GetProductFeatures (descr, True)
+        YProdNew = pd.DataFrame (YProdNew)
+        XProd = pd.concat ([XProd, XProdNew])
+        YProd = pd.concat ([YProd, YProdNew])
+      XProd = XProd.drop ('brand_ratio', 1)
 
-  if CLUSTER_FEATURE:
-    productsToClusters = ClusterInternal ("::".join (productDescriptions), True, numClusters, False)
-  elif PRODUCT_FEATURE:
-    XProd = YProd = pd.DataFrame ()
-    for descr in productDescriptions:
-      (XProdNew, YProdNew) = GetProductFeatures (descr, True)
-      YProdNew = pd.DataFrame (YProdNew)
-      XProd = pd.concat ([XProd, XProdNew])
-      YProd = pd.concat ([YProd, YProdNew])
-    XProd = XProd.drop ('brand_ratio', 1)
-
-    productFeatures = pd.concat ([XProd, YProd], 1)
-    del XProd, YProd
+      productFeatures = pd.concat ([XProd, YProd], 1)
+      del XProd, YProd
 
   if type (productCode) is list:
     for pc in productCode:
@@ -282,8 +283,8 @@ def PrepareData (productCode, cutOff, scale=True, numClusters=2):
 
   if MULTINOMIAL_PREDICTION:
     Y[Y['ratio'] <= 0.33] = 0
-    Y[(Y['ratio'] > 0.33) & (Y['ratio'] <= 0.66)] = 1
     Y[Y['ratio'] > 0.66] = 2
+    Y[(Y['ratio'] > 0.33) & (Y['ratio'] <= 0.66)] = 1
   else:
     Y['ratio'] = np.where (Y.ratio >= cutOff, 1, 0)
 

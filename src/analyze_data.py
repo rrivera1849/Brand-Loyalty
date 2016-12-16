@@ -12,6 +12,10 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.model_selection import cross_val_score
 from sklearn.feature_selection import RFECV
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix
+
+CONFUSION_MATRIX=False
 
 def CreateAllProductHistograms ():
   """Creates every product ratio histogram.
@@ -61,7 +65,7 @@ def FitModels (models, productCode, cutOff, kFold, featureEvaluation, doPlot):
   results = []
 
   for name, model in models:
-    print 'Preparing Data!'
+    print "Preparing data"
     (X, Y) = data_preprocessing.PrepareData (productCode, cutOff)
     columnNames = X.columns.values.tolist ()
 
@@ -100,8 +104,40 @@ def FitModels (models, productCode, cutOff, kFold, featureEvaluation, doPlot):
         plt.close (fig)
 
     else:
-      print 'Running Model'
+      print "Running Model!"
       scores = cross_val_score (model, X, Y.ratio.ravel (), cv=kFold, scoring='accuracy')
+
+    CONFUSION_MATRIX=True
+    if CONFUSION_MATRIX == True:
+      print 'Making Confusion matrix'
+      X_train, X_test, Y_train, Y_test = train_test_split(X, Y.ratio.ravel (), train_size=0.7, random_state=43)
+      Y_pred = model.fit (X_train, Y_train).predict(X_test)
+      cnf_matrix = confusion_matrix(Y_test, Y_pred)
+
+      if data_preprocessing.MULTINOMIAL_PREDICTION:
+        classes = ["Non-Branded Buyer", "Balanced Buyer", "Branded Buyer"]
+      else:
+        classes = ["Non-Branded Buyer", "Branded Buyer"]
+
+      print "ypred"
+      Y_test
+
+      print "Value counts"
+      tmp = pd.DataFrame (Y)
+      print Y.ratio.value_counts ()
+
+      figure = plt.figure ()
+      plt.imshow (cnf_matrix, interpolation='nearest', cmap=plt.cm.Blues)
+      plt.title ('Confusion Matrix using ' + name)
+      plt.colorbar ()
+      tick_marks = np.arange(len(classes))
+      plt.xticks(tick_marks, classes, rotation=45)
+      plt.yticks(tick_marks, classes)
+      plt.tight_layout()
+      plt.ylabel('True label')
+      plt.xlabel('Predicted label')
+      plt.savefig (utilities.outputFolder + str (productCode) + "-" + name + "-confusion-matrix")
+      plt.close (figure)
 
     results.append (scores)
 
@@ -239,6 +275,9 @@ def main ():
 
   modelGroup.add_option ('--recursive-feature-evaluation', action='store_true', \
                          dest='recursive_feature_evaluation', default=False)
+
+  modelGroup.add_option ('--confusion-matrix', action='store_true', \
+                         dest='confusion_matrix', default=False)
   #=========================Model Group End=========================#
 
   #=========================Utility Group Start=========================#
@@ -272,7 +311,8 @@ def main ():
 
   data_preprocessing.MULTINOMIAL_PREDICTION = options.multinomial_prediction
   data_preprocessing.CLUSTER_FEATURE = options.cluster_feature
-  data_preprocessing.PRODUCT_FEATURE = options.PRODUCT_FEATURE
+  data_preprocessing.PRODUCT_FEATURE = options.product_feature
+  CONFUSION_MATRIX = options.confusion_matrix
 
   utilities.ReadAllPickledObjects ()
 
@@ -305,8 +345,7 @@ def main ():
       models.append (('SVM Binary', SVC ()))
 
     if options.run_logistic == True:
-      models.append (('Logistic Regression Binary', LogisticRegression ()))
-      models.append (('Logistic Regression Multinomial', LogisticRegression ()))
+      models.append (('Logistic Regression', LogisticRegression ()))
 
     if options.run_ada_boost == True:
       models.append (('AdaBoost Binary', AdaBoostClassifier (n_estimators=200)))
