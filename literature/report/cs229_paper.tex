@@ -306,6 +306,7 @@
 % (Unless specifically asked to do so by the journal or conference you plan
 % to submit to, of course. )
 
+\usepackage{multirow}
 
 % correct bad hyphenation here
 \hyphenation{op-tical net-works semi-conduc-tor}
@@ -607,10 +608,31 @@ Future work could focus on finding a marketing strategy that attracts new custom
 
 \begin{figure}
 \centering
+        \includegraphics[totalheight=6cm]{confusion-matrix-binary}
+    \caption{Caption}
+    \label{fig:verticalcell}
+\end{figure}
+
+\begin{figure}
+\centering
         \includegraphics[totalheight=6cm]{confusion-matrix-multinomial}
     \caption{Caption}
     \label{fig:verticalcell}
 \end{figure}
+
+\begin{center}
+\scalebox{0.5}{
+\begin{tabular}{ |c|c|c|c|c|c| } 
+\hline
+Overall & Eggs & Bacon & Contraceptives & Protein Supplements & Ketchup  \\
+\hline
+Income & White & Income & Income & Income & Income  \\
+Household Size & Female Education & Female Age & Household Size & Household Size & White \\
+Female Age & Income & Male Age & Age/Presence of Children & Age/Presence of Children & Female Age \\
+\hline
+\end{tabular}
+}
+\end{center}
 
 
 \section{Conclusion}
