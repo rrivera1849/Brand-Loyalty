@@ -515,26 +515,35 @@ The data is stored in four separate datasets: Panelists, which contains all the 
 
 Each product module represents a group of UPCs that are essentially substitutes for one another. Examples include CEREAL - READY TO EAT, SEAFOOD-TUNA-SHELF STABLE, DAIRY-MILK-REFRIGERATED, and PAIN REMEDIES - HEADACHE.
 
-\begin{figure}[!htb]
-\minipage{0.5\textwidth}
-  \includegraphics[width=\linewidth]{histogram-1}
-  \caption{A really Awesome Image}\label{fig:awesome_image1}
-\endminipage\hfill
-\minipage{0.5\textwidth}
-  \includegraphics[width=\linewidth]{histogram-2}
-  \caption{A really Awesome Image}\label{fig:awesome_image2}
-\endminipage\hfill
-\end{figure}
-
 \subsection{Preprocessing}
 In order to prepare our data to use in our machine learning algorithms, we have to determine the purchase history of each household for a given product, and also calculate certain metrics for that product. An example is helpful for illustration: 
 
 To get household purchase history for product module 5000, we filter the Products dataset for UPCs with product module = 5000. We then merge that UPC file with the Purchases dataset to get a list of all purchases made from product module 5000. We then merge with Trips and then with Panelists and now have a list of all purchases, each labeled with its purchasing household. We then sum the number of purchases each household makes in total and also for the specific brand label = ‘CTL,’ which is the brand code for store brand. We can calculate the number of brand name products they bought by taking $\# total\ purchases-\# CTL\ purchases$. The household’s ‘brand loyalty’ is simply $\frac{\#brand\ purchases}{\#total\ purchases}$. 
 
 
-We also calculate the following metrics for product module 5000: average unit price, average brand/store brand price ratio, and total brand/store-brand purchase ratio. The $average\ unit\ price\ =\ \frac{total\ \$\ spent}{\#units\ purchased}$. The $brand\ price\ ratio\ =\ \frac{average\ brand\ unit\ price}{average\ store\ brand\ unit\ price}$. The $brand\ purchase\ ratio\ =\ \frac{\#\ brand\ purchases}{\#\ total\ purchases}$.
+We then calculate the following metrics for each product:
 
-We choose a collection of 25 representative products to make predictions about. We require each product to have more than 10,000 purchases in the year and we include a mix of products across departments, from FROZEN FOODS to ALCOHOLIC BEVERAGES to HEALTH \& BEAUTY. We are especially careful to select products that have a variety of household brand loyalty ratios. In general, most households were almost 100\% ‘brand loyal’ or not for any given product. It is important to select products that at least have some households that are 100\% ‘brand loyal’ and 0\% ‘brand loyal’ so that our binary prediction models are meaningful. Some of our selected products are strongly ‘brand’ (detergent), some have mostly off-brand purchases (milk), while others are a mix of both (eggs).
+\begin{equation*}
+\begin{aligned}
+average\ unit\ price\ =\ \frac{total\ \$\ spent}{\#units\ purchased} \\
+brand\ price\ ratio\ =\ \frac{average\ brand\ unit\ price}{average\ store\ brand\ unit\ price} \\
+brand\ purchase\ ratio\ =\ \frac{\#\ brand\ purchases}{\#\ total\ purchases}
+\end{aligned}
+\end{equation*}
+
+We choose a collection of 25 representative products to make predictions about. We require each product to have more than 10,000 purchases in the year and we include a mix of products across departments, from FROZEN FOODS to ALCOHOLIC BEVERAGES to HEALTH \& BEAUTY. We are especially careful to select products that have a variety of household brand loyalty ratios. In general, most households were almost 100\% ‘brand loyal’ or not for any given product. It is important to select products that at least have some households that are 100\% ‘brand loyal’ and 0\% ‘brand loyal’ so that our binary prediction models are meaningful. Some of our selected products are strongly ‘brand’ (detergent), some have mostly off-brand purchases (milk), while others are a mix of both (eggs) (Fig. 1 \& 2).
+
+
+\begin{figure}[!htb]
+\minipage{0.5\textwidth}
+  \includegraphics[width=\linewidth]{histogram-1}
+  \caption{Brand vs Non-Brand Ratio for Eggs}\label{fig:awesome_image1}
+\endminipage\hfill
+\minipage{0.5\textwidth}
+  \includegraphics[width=\linewidth]{histogram-2}
+  \caption{Brand vs Non-Brand Ratio for Detergents}\label{fig:awesome_image2}
+\endminipage\hfill
+\end{figure}
 
 \subsection{Feature Selection}
 
@@ -546,10 +555,13 @@ For our machine learning algorithms, we chose as features income, race, househol
 \begin{figure}
 \centering
         \includegraphics[totalheight=6cm]{clusters}
-    \caption{Caption}
+    \caption{Two product clusters extracted  using the KNN algorithm. Unit price heavily influences what cluster products fall into.}
     \label{fig:verticalcell}
 \end{figure}
 \section{Methods}
+
+\subsection{K-Nearest Neighbors for Product Clustering}
+We use the K-Nearest Neighbors (KNN) algorithm to cluster our selected products and other products in the same category. The KNN algorithm takes as input a training dataset and groups the data into ``clusters". In our implementation, we extracted three product features to base our clustering on: unit price, brand price ratio and brand purchase ratio (Fig. 3). These clusters are then used as one of the features for our Logistic Regression model. The idea of this feature is that a person's buying behavior might be influenced by what kind of products they're buying.
 
 \subsection{Logistic Regression}
 Our initial efforts were concentrated upon whether consumers tend to buy more branded or non-branded products. This is a binary classification task for which we implemented a Logistic Regression model. A Logistic Regression squashes the output of the model in the range $y = \{0,1\} $  using the sigmoid function (Eq. 1). The output values are then interpreted as the probabilities, thus any output greater than 0.5 is classified as belonging to the positive class and to the negative class otherwise (Eq. 2).
@@ -603,9 +615,19 @@ All of our previous models have been binary classifiers. In order to account for
 p(y = i | x;\theta) = \frac{e^{\eta_i}}{\sum_{j=1}^{k} e^{\theta_j^Tx}}
 \end{equation}
 
-\section{Experiments}
+\begin{figure}[t]
+\centering
+        \includegraphics[totalheight=6cm]{algorithm-comparison}
+    \caption{Comparison of Algorithms used for Classification. Multinomial Logistic Regression yielded the best results.}
+    \label{fig:verticalcell}
+\end{figure}
 
-\subsection{Results}
+\begin{figure}[t]
+\centering
+        \includegraphics[totalheight=6cm]{cluster-analysis-combined}
+    \caption{Analysis of the effectiveness of the Cluster feature. K=2 yielded the best results on both the binary and multinomial case.}
+    \label{fig:verticalcell}
+\end{figure}
 
 \begin{figure}[t]
     \centering
@@ -621,31 +643,9 @@ p(y = i | x;\theta) = \frac{e^{\eta_i}}{\sum_{j=1}^{k} e^{\theta_j^Tx}}
     \end{minipage}
 \end{figure}
 
-\subsection{Discussion}
-Multinomial logistic regression has the highest accuracy on the test set (96.2\%), which makes sense because it allows for a more robust representation of households’ brand loyalty. The regular logistic model performs slightly worse (95.5\%) because it only accounts for households who are on either extreme of the spectrum, while the multinomial establishes a class for the brand neutral consumer who buys a good mix of national brand and store brand products. We considered extending this to four or five categories, but decided that three is most logical for labelling a household. It would be interesting to only choose products with a relatively uniform brand loyalty distribution and see if the multinomial’s performance relative to regular logistic improved.
-
-
-The demographic features contributing to brand purchases are somewhat logical. Brands cost more, so higher earners can afford to pay a premium while lower earners opt for cheaper store brand replacements. Older females often make most of a household’s grocery purchases, and they are likely to have settled on a reliable brand. Household size should be explored further, as it is unclear why a larger household indicates greater brand loyalty. It could be that this correlates with larger families, who rely on making quick shopping trips and do not want to `taste test' unknown store brands. 
-An interesting discovery is that certain premium products (e.g. brand eggs) are preferred by households with white, educated women. Education and race were among the least predictive factors in our overall recursive factor elimination, but they jumped to the top in a few products. This is somewhat of an extension of the pattern observed in Bronnenberg et al.\cite{bronnenberg2014pharmacists} that certain more informed consumers favor store brands when buying homogenous products. However, it could be stated that premium products actually have qualities in their brand varieties that make informed shoppers prefer them (e.g. organic or cage-free eggs).
-Drawing a direct link between a head of house’s age, education, or work and brand loyalty is challenging because our dataset does not indicate which member of the household made various grocery purchases. Having this information would allow for examining how a person’s demographics affect their spouse’s buying decisions and vice versa.
-
-
-\begin{figure}
-\centering
-        \includegraphics[totalheight=6cm]{cluster-analysis-combined}
-    \caption{Caption}
-    \label{fig:verticalcell}
-\end{figure}
-
-\begin{figure}
-\centering
-        \includegraphics[totalheight=6cm]{algorithm-comparison}
-    \caption{Caption}
-    \label{fig:verticalcell}
-\end{figure}
-
+\begin{figure}[!htb]
 \begin{center}
-\scalebox{0.7}{
+\scalebox{0.5}{
 \begin{tabular}{ |c|c|c|c|c|c| } 
 \hline
 Overall & Eggs & Bacon & Contraceptives & Ketchup  \\
@@ -657,6 +657,37 @@ Female Age & Income & Male Age & Age/Presence of Children & Female Age \\
 \end{tabular}
 }
 \end{center}
+\caption{Most effective features derived from the recursive feature elimination method.}
+\end{figure}
+
+\section{Experiments}
+
+Using the methods described above, we ran several experiments for both the binary and multinomial case. Our initial experiments were concerned with getting baseline results for Logistic Regression, SVMs and Boosting on the binary classification case. Once this was done, we chose the best model of the three and experimented on the multinomial case. All models were evaluated using K-Fold Cross Validation with 10-folds. K-Fold Cross validation is a method for assessing how results will generalize beyond the training set. It partitions the dataset into K equal sized folds. Of the K folds, one is retained for testing and K-1 are used for training. This process is repeated K times with each of the folds being used once for testing. The results are then averaged to produce a single estimation.
+
+We also performed Recursive Feature Elimination (RFE) to evaluate which features were most impactful toward our classification. RFE is initially trained on every feature and assigns weights to each of the features. Then, features whose weights are the smallest are pruned from the current set of features. This process is then repeated recursively.
+
+\subsection{Results}
+Our results, for the binary case show that Logistic Regression to be the best performing algorithm on the binary case (Fig. 4). It yielded an accuracy of 95.5\% on average over all folds while SVM and Boosting yielded an accuracy of 94.8\% and 95\% respectively. We then chose Logistic Regression to predict on the multinomial case, this yielded an accuracy of 96.1\%.
+
+We performed an analysis of the effectiveness of our clustering feature on both the binary and multinomial case for Logistic Regression. The results can be seen on Fig. 5, they show that we get the best result when $K=2$.
+
+\subsection{Discussion}
+Multinomial logistic regression has the best accuracy, which makes sense because it allows for a more robust representation of households’ brand loyalty. The regular logistic model performs slightly worse because it only accounts for households who are on either extreme of the spectrum, while the multinomial establishes a class for the brand neutral consumer who buys a good mix of national brand and store brand products. We considered extending this to four or five categories, but decided that three is most logical for labelling a household. The logistic confusion matrices show that our selected products ended up having much more store brand purchases than we originally intended, but our high accuracy is still reflected in individual products that have a good distribution (Fig. 6 \& 7).
+
+
+Income, Head Female Age, and Household Size were most predictive of brand loyalty (Fig. 8), which is somewhat logical. Brands cost more, so higher earners can afford to pay a premium while lower earners opt for cheaper store brand replacements. Older females often make most of a household’s grocery purchases, and they are likely to have settled on a reliable brand. Household size should be explored further, as it is unclear why a larger household indicates greater brand loyalty. It could be that this correlates with larger families, who rely on making quick shopping trips and do not want to `taste test' unknown store brands. 
+
+
+An interesting discovery is that certain premium products (e.g. brand eggs) are preferred by households with white, educated women. Education and race were among the least predictive factors in our overall recursive factor elimination, but they jumped to the top in a few products. This is somewhat of an extension of the pattern observed in Bronnenberg et al.\cite{bronnenberg2014pharmacists} that certain more informed consumers favor store brands when buying homogenous products. However, it could be stated that premium products actually have qualities in their brand varieties that make informed shoppers prefer them (e.g. organic or cage-free eggs).
+
+
+Drawing a direct link between a head of house’s age, education, or work and brand loyalty is challenging because our dataset does not indicate which member of the household made various grocery purchases. Having this information would allow for examining how a person’s demographics affect their spouse’s buying decisions and vice versa.
+
+
+We were surprised that product cluster and our calculated product features did little to improve our overall accuracy. Although both regular and multinomial logistic regression perform best with two clusters, the accuracy difference is only about 0.1 \%. When we instead use the product features directly in the models, a similar result is observed.
+
+
+One potential flaw in our approach is that we fail to account for location effects on our households’ brand-buying tendencies. Different parts of the country have more or less access to different brands, and some areas have access to superior store brands\cite{bronnenberg2016formation}. Also, the same income can put a household in drastically different socioeconomic levels in different metro areas, so some normalization of income may have been helpful. 
 
 
 \section{Conclusion}
