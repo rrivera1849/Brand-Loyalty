@@ -398,6 +398,8 @@ We predict a household’s propensity to purchase national brand name products b
 % no \IEEEPARstart
 Brand loyalty is a chief concern for marketers of grocery products. Consumers will often buy the same brand of a household good for their entire lives. It is vital for product marketers to determine which consumers are especially ‘brand loyal’ so that the marketers can target advertising and promotions toward them. 
 For most grocery items, consumers are presented with the choice of purchasing a brand name product or a store brand product. Well-known national brands include Kellogg’s cereal, Heinz ketchup, and Tide detergent, while store brands include Costco’s Kirkland, Target’s Market Pantry, and Walmart’s Great Value. Despite a brand product often being more expensive than its store brand counterpart, many consumers prefer the reliability and known quality of the national brand. This brand preference or loyalty widely varies across different households and especially across different product types. We use machine learning techniques to predict a household’s preference for brand name products and determine what factors into that predilection.
+
+
 For a given product, we label households as ‘brand loyal’ or not based on the brand ratio of their past purchases. Our algorithm takes as inputs the demographics of a household along with product-specific parameters. We then use logistic regression, support vector machines, and adaptive boosting to predict the household’s brand loyalty for that product. We also experiment with using the k-nearest neighbors algorithm to find similar product clusters and utilize these clusters as a feature in our final brand loyalty prediction.
 
 % An example of a floating figure using the graphicx package.
@@ -541,7 +543,7 @@ We choose a collection of 25 representative products to make predictions about. 
 \endminipage\hfill
 \minipage{0.5\textwidth}
   \includegraphics[width=\linewidth]{histogram-2}
-  \caption{Brand vs Non-Brand Ratio for Detergents}\label{fig:awesome_image2}
+  \caption{Brand vs Non-Brand Ratio for Detergents.}\label{fig:awesome_image2}
 \endminipage\hfill
 \end{figure}
 
@@ -664,10 +666,12 @@ Female Age & Income & Male Age & Age/Presence of Children & Female Age \\
 
 Using the methods described above, we ran several experiments for both the binary and multinomial case. Our initial experiments were concerned with getting baseline results for Logistic Regression, SVMs and Boosting on the binary classification case. Once this was done, we chose the best model of the three and experimented on the multinomial case. All models were evaluated using K-Fold Cross Validation with 10-folds. K-Fold Cross validation is a method for assessing how results will generalize beyond the training set. It partitions the dataset into K equal sized folds. Of the K folds, one is retained for testing and K-1 are used for training. This process is repeated K times with each of the folds being used once for testing. The results are then averaged to produce a single estimation. For our dataset, this results in about 630,000 examples used for training and 70,000 used for testing.
 
+
 We also performed Recursive Feature Elimination (RFE) to evaluate which features were most impactful toward our classification. RFE is initially trained on every feature and assigns weights to each of the features. Then, features whose weights are the smallest are pruned from the current set of features. This process is then repeated recursively.
 
 \subsection{Results}
 Our results, for the binary case show Logistic Regression to be the best performing algorithm on the binary case (Fig. 4). It yielded an accuracy of 95.5\% on average over all folds while SVM and Boosting yielded an accuracy of 94.8\% and 95\% respectively. We then chose Logistic Regression to predict on the multinomial case, this yielded an accuracy of 96.1\%.
+
 
 We performed an analysis of the effectiveness of our clustering feature on both the binary and multinomial case for Logistic Regression. The results can be seen on Fig. 5, they show that we get the best result when $K=2$.
 
