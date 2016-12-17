@@ -667,7 +667,7 @@ Using the methods described above, we ran several experiments for both the binar
 We also performed Recursive Feature Elimination (RFE) to evaluate which features were most impactful toward our classification. RFE is initially trained on every feature and assigns weights to each of the features. Then, features whose weights are the smallest are pruned from the current set of features. This process is then repeated recursively.
 
 \subsection{Results}
-Our results, for the binary case show that Logistic Regression to be the best performing algorithm on the binary case (Fig. 4). It yielded an accuracy of 95.5\% on average over all folds while SVM and Boosting yielded an accuracy of 94.8\% and 95\% respectively. We then chose Logistic Regression to predict on the multinomial case, this yielded an accuracy of 96.1\%.
+Our results, for the binary case show Logistic Regression to be the best performing algorithm on the binary case (Fig. 4). It yielded an accuracy of 95.5\% on average over all folds while SVM and Boosting yielded an accuracy of 94.8\% and 95\% respectively. We then chose Logistic Regression to predict on the multinomial case, this yielded an accuracy of 96.1\%.
 
 We performed an analysis of the effectiveness of our clustering feature on both the binary and multinomial case for Logistic Regression. The results can be seen on Fig. 5, they show that we get the best result when $K=2$.
 
